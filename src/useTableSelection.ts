@@ -1,4 +1,5 @@
 import {useCallback, useMemo} from 'react'
+
 import type {DocumentBase} from './types'
 
 export interface SelectionState {

@@ -1,4 +1,5 @@
 import {Button, Card, Flex, Text} from '@sanity/ui'
+
 import type {PaginationState} from './usePagination'
 
 interface PaginationProps {

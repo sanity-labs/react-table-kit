@@ -1,11 +1,13 @@
-import React, {useState, useCallback} from 'react'
-import {useOptimisticValue} from './useOptimisticValue'
-import {DayPicker} from 'react-day-picker'
-import 'react-day-picker/style.css'
+import {CalendarIcon} from '@sanity/icons'
 // date-fns not needed — we parse dates manually to avoid UTC timezone issues
 import {Button, Popover, useClickOutsideEvent, useGlobalKeyDown} from '@sanity/ui'
-import {CalendarIcon} from '@sanity/icons'
+import React, {useState, useCallback} from 'react'
+
+import 'react-day-picker/style.css'
+import {DayPicker} from 'react-day-picker'
+
 import type {DocumentBase} from './types'
+import {useOptimisticValue} from './useOptimisticValue'
 
 /**
  * DatePickerCell — renders a date cell that opens a calendar popover for editing.
@@ -185,7 +187,7 @@ export function DatePickerCell<T extends DocumentBase>({
           paddingLeft={4}
           tone={buttonTone}
         >
-          <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center justify-between gap-2">
             {cellRenderer(displayValue, row)}
             <CalendarIcon className="text-3xl" />
           </div>

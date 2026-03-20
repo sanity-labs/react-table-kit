@@ -1,9 +1,10 @@
-import {describe, expect, it, vi} from 'vitest'
 import {screen, within} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import {describe, expect, it, vi} from 'vitest'
+
+import {column} from '../src/columns'
 import {DocumentTable} from '../src/DocumentTable'
 import {useDocumentTable} from '../src/useDocumentTable'
-import {column} from '../src/columns'
 import {renderWithTheme} from './helpers'
 
 const MOCK_DOCUMENTS = [

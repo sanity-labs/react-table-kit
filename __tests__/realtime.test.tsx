@@ -1,12 +1,13 @@
-import {describe, expect, it, vi} from 'vitest'
 import {screen} from '@testing-library/react'
-import {DocumentTable} from '../src/DocumentTable'
-import {column} from '../src/columns'
-import {renderWithTheme} from './helpers'
-import {useState} from 'react'
-import userEvent from '@testing-library/user-event'
 import {renderHook, act} from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import {useState} from 'react'
+import {describe, expect, it, vi} from 'vitest'
+
+import {column} from '../src/columns'
+import {DocumentTable} from '../src/DocumentTable'
 import {useStableDocuments} from '../src/useStableDocuments'
+import {renderWithTheme} from './helpers'
 
 const MOCK_DOCUMENTS = [
   {_id: 'doc-1', _type: 'article', _updatedAt: '2026-03-01T12:00:00Z', title: 'First Article'},

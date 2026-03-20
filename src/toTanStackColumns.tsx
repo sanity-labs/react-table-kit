@@ -2,11 +2,11 @@ import {Checkbox, Text} from '@sanity/ui'
 import {createColumnHelper} from '@tanstack/react-table'
 import type {ComponentType, SVGProps} from 'react'
 
-import type {ColumnDef, DocumentBase} from './types'
 import {DatePickerCell} from './DatePickerCell'
+import {EditableCustomCell} from './EditableCustomCell'
 import {EditableSelectCell} from './EditableSelectCell'
 import {EditableTextCell} from './EditableTextCell'
-import {EditableCustomCell} from './EditableCustomCell'
+import type {ColumnDef, DocumentBase} from './types'
 import {DEFAULT_CELL_RENDERERS} from './utils'
 
 // Augment TanStack's ColumnMeta to include all custom properties used by this table

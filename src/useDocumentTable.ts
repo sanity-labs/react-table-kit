@@ -1,5 +1,3 @@
-import type {ReactNode} from 'react'
-
 import {
   type RowSelectionState,
   type SortingState,
@@ -9,11 +7,12 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import type {ReactNode} from 'react'
 import {useMemo, useState} from 'react'
 
 import type {ColumnDef, DocumentBase, SortConfig} from './types'
-import type {TableSelection} from './useTableSelection'
 import type {PaginationState} from './usePagination'
+import type {TableSelection} from './useTableSelection'
 
 /**
  * Our own table instance type — consumers use this, not TanStack's Table type.

@@ -1,4 +1,5 @@
 import {Badge} from '@sanity/ui'
+
 import {BadgeTone} from './columns'
 
 function capitalize(str: string): string {

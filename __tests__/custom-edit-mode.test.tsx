@@ -1,8 +1,9 @@
-import {describe, it, expect, vi} from 'vitest'
 import {screen} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {DocumentTable} from '../src/DocumentTable'
+import {describe, it, expect, vi} from 'vitest'
+
 import {column} from '../src/columns'
+import {DocumentTable} from '../src/DocumentTable'
 import type {DocumentBase} from '../src/types'
 import {renderWithTheme} from './helpers'
 

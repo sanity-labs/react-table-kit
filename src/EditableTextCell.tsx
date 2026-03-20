@@ -1,7 +1,8 @@
-import {useEffect, useRef, useState} from 'react'
 import {TextArea} from '@sanity/ui'
-import {useOptimisticValue} from './useOptimisticValue'
+import {useEffect, useRef, useState} from 'react'
+
 import type {DocumentBase} from './types'
+import {useOptimisticValue} from './useOptimisticValue'
 
 /**
  * EditableTextCell — inline text editing with auto-resize textarea.

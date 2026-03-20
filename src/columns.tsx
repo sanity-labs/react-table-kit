@@ -1,8 +1,9 @@
-import type {ColumnDef, ColumnEditConfig, DocumentBase, EditOption} from './types'
-import React, {type ReactNode} from 'react'
 import {Badge, Button, Text} from '@sanity/ui'
-import {ToggleSwitch} from './ToggleSwitch'
 import {format, isPast} from 'date-fns'
+import React, {type ReactNode} from 'react'
+
+import {ToggleSwitch} from './ToggleSwitch'
+import type {ColumnDef, ColumnEditConfig, DocumentBase, EditOption} from './types'
 
 /** Capitalize first letter of a string */
 function capitalize(str: string | undefined): string {

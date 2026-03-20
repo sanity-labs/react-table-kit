@@ -1,11 +1,11 @@
 import {Card, Flex, Stack, Text} from '@sanity/ui'
 import {useMemo, useRef} from 'react'
 
+import {DocumentTableInner} from './DocumentTableInner'
+import {FilterBar} from './FilterBar'
 import type {DocumentBase, DocumentTableProps} from './types'
 import {useTableFilters} from './useTableFilters'
-import {FilterBar} from './FilterBar'
 import {useTableGrouping} from './useTableGrouping'
-import {DocumentTableInner} from './DocumentTableInner'
 
 /**
  * DocumentTable — the top-level table component.

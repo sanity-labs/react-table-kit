@@ -1,12 +1,13 @@
-import {describe, expect, it, vi} from 'vitest'
-import {screen, within, waitFor} from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import {ThemeProvider} from '@sanity/ui'
 import {buildTheme} from '@sanity/ui/theme'
+import {screen, within, waitFor} from '@testing-library/react'
 import {render} from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import {NuqsTestingAdapter, type UrlUpdateEvent} from 'nuqs/adapters/testing'
-import {DocumentTable} from '../src/DocumentTable'
+import {describe, expect, it, vi} from 'vitest'
+
 import {column} from '../src/columns'
+import {DocumentTable} from '../src/DocumentTable'
 
 const theme = buildTheme()
 

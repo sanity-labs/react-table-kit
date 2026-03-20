@@ -1,6 +1,7 @@
 import {Badge, Card, Checkbox, Flex, Label, Text} from '@sanity/ui'
-import {motion} from 'framer-motion'
 import {flexRender, Row} from '@tanstack/react-table'
+import {motion} from 'framer-motion'
+
 import type {DocumentBase} from './types'
 
 /** Group section with header and collapsible rows */

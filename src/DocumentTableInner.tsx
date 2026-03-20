@@ -3,9 +3,8 @@ import {
   dropTargetForElements,
   monitorForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import {motion, LayoutGroup} from 'framer-motion'
-import {Button, Card, Stack, Text} from '@sanity/ui'
 import {AddIcon} from '@sanity/icons'
+import {Button, Card, Stack, Text} from '@sanity/ui'
 import {
   type PaginationState as TanStackPaginationState,
   type RowSelectionState,
@@ -16,17 +15,18 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {motion, LayoutGroup} from 'framer-motion'
 import {useQueryState, parseAsString, parseAsInteger} from 'nuqs'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 
-import type {ColumnDef, DocumentBase, DocumentTableProps} from './types'
-import {toTanStackColumns} from './toTanStackColumns'
-import {GroupSection} from './GroupSection'
 import {BulkActionBar} from './BulkActionBar'
-import {useTableSelection} from './useTableSelection'
+import {GroupSection} from './GroupSection'
 import {Pagination} from './Pagination'
 import {SelectAllBanner} from './SelectAllBanner'
+import {toTanStackColumns} from './toTanStackColumns'
+import type {ColumnDef, DocumentBase, DocumentTableProps} from './types'
 import type {useTableGrouping} from './useTableGrouping'
+import {useTableSelection} from './useTableSelection'
 
 /** Inner component — only renders when we have data */
 export function DocumentTableInner<T extends DocumentBase>({

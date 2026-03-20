@@ -1,5 +1,6 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {useQueryState, useQueryStates, parseAsString} from 'nuqs'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+
 import type {DocumentBase} from './types'
 
 export interface FilterState {

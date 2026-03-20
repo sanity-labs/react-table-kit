@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react'
-import {useOptimisticValue} from './useOptimisticValue'
+
 import type {DocumentBase} from './types'
+import {useOptimisticValue} from './useOptimisticValue'
 
 /**
  * EditableDateCell — renders a cell that toggles between formatted date display and a date input.

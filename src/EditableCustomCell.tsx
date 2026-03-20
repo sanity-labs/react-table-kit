@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react'
-import {useOptimisticValue} from './useOptimisticValue'
+
 import type {DocumentBase} from './types'
+import {useOptimisticValue} from './useOptimisticValue'
 
 /**
  * EditableCustomCell — renders a cell that opens a developer-provided editor.

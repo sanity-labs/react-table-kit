@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react'
+
 import type {DocumentBase} from './types'
 
 const DEFAULT_GRACE_PERIOD = 3000 // 3 seconds

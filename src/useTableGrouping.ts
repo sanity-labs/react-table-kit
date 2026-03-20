@@ -1,5 +1,5 @@
-import {useCallback, useState} from 'react'
 import {useQueryState, parseAsString} from 'nuqs'
+import {useCallback, useState} from 'react'
 
 export interface GroupedData<T> {
   groupName: string

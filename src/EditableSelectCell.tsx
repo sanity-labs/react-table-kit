@@ -1,7 +1,8 @@
-import {Menu, MenuButton, MenuItem} from '@sanity/ui'
 import {CheckmarkIcon} from '@sanity/icons'
-import {useOptimisticValue} from './useOptimisticValue'
+import {Menu, MenuButton, MenuItem} from '@sanity/ui'
+
 import type {DocumentBase} from './types'
+import {useOptimisticValue} from './useOptimisticValue'
 
 /**
  * EditableSelectCell — renders a cell with a MenuButton dropdown for inline editing.

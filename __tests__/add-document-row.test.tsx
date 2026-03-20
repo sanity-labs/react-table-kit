@@ -1,8 +1,9 @@
-import {describe, it, expect, vi} from 'vitest'
 import {screen, fireEvent} from '@testing-library/react'
+import {describe, it, expect, vi} from 'vitest'
+
 import {DocumentTable} from '../src/DocumentTable'
-import {renderWithTheme} from './helpers'
 import type {DocumentBase, ColumnDef} from '../src/types'
+import {renderWithTheme} from './helpers'
 
 const mockData: DocumentBase[] = [
   {_id: 'doc-1', _type: 'article', title: 'First Article'},

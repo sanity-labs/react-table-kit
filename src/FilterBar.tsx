@@ -1,3 +1,4 @@
+import {CloseIcon, SearchIcon} from '@sanity/icons'
 import {
   Button,
   Card,
@@ -11,9 +12,9 @@ import {
   Text,
   TextInput,
 } from '@sanity/ui'
-import {CloseIcon, SearchIcon} from '@sanity/icons'
-import type {UseTableFiltersResult} from './useTableFilters'
+
 import type {DocumentBase} from './types'
+import type {UseTableFiltersResult} from './useTableFilters'
 
 interface FilterBarProps<T extends DocumentBase> {
   filters: UseTableFiltersResult<T>
@@ -84,7 +85,7 @@ export function FilterBar<T extends DocumentBase>({
 
         {/* Group by */}
         {hasGroupBy && onGroupByChange && (
-          <Stack space={2} className="max-w-md pr-auto">
+          <Stack space={2} className="pr-auto max-w-md">
             <Label size={2} muted>
               Group by:
             </Label>
