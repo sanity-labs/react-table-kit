@@ -57,10 +57,6 @@ export function usePagination(totalItems: number, pageSize: number = 50): Pagina
     [totalPages],
   )
 
-  const _resetToFirstPage = useCallback(() => {
-    setPage(1)
-  }, [])
-
   return {
     page: clampedPage,
     pageSize,

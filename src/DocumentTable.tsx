@@ -18,7 +18,7 @@ export function DocumentTable<T extends DocumentBase>({
   data,
   columns,
   defaultSort,
-  _loading,
+  loading: _loading,
   emptyMessage = 'No documents found',
   stripedRows = false,
   bulkActions,

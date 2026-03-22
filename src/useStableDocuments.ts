@@ -20,6 +20,7 @@ export function useStableDocuments<T extends DocumentBase>(
   const [ghostDocs, setGhostDocs] = useState<Map<string, T>>(new Map())
   const timeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const prevDocsRef = useRef<Map<string, T>>(new Map())
+  const newGhostsRef = useRef<Map<string, T>>(new Map())
 
   // Build a set of current document IDs for fast lookup
   const currentIds = new Set(documents.map((d) => d._id))
@@ -62,6 +63,8 @@ export function useStableDocuments<T extends DocumentBase>(
     }
   }
 
+  newGhostsRef.current = newGhosts
+
   // Update prev docs ref for next render comparison
   const newPrevDocs = new Map<string, T>()
   for (const doc of documents) {
@@ -77,14 +80,16 @@ export function useStableDocuments<T extends DocumentBase>(
     }
   }
 
+  const ghostSyncKey = ghostsChanged ? [...newGhosts.keys()].sort().join('|') : ''
+
   // Schedule ghost state updates via effect (can't setState during render)
   // Intentionally syncs ghost state after render; deps omitted to mirror render-time ghost recomputation.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ghostsChanged) {
-      setGhostDocs(newGhosts)
+      setGhostDocs(newGhostsRef.current)
     }
-  })
+  }, [ghostsChanged, ghostSyncKey])
 
   // Cleanup timeouts on unmount
   useEffect(() => {

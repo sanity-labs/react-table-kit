@@ -355,10 +355,6 @@ export function DocumentTableInner<T extends DocumentBase>({
     return Array.from(groupMap.entries()).map(([name, rows]) => ({name, rows}))
   }, [groupBy, sortedRows])
 
-  const tableState = table.getState()
-  const columnSizing = tableState.columnSizing
-  const columnSizingInfo = tableState.columnSizingInfo
-  const tableColumnOrder = tableState.columnOrder
   const headerGroups = table.getHeaderGroups()
 
   const gridTemplateColumns = useMemo(() => {
