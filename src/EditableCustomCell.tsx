@@ -13,7 +13,7 @@ export function EditableCustomCell<T extends DocumentBase>({
   row,
   onEdit,
   cellRenderer,
-  columnId,
+  _columnId,
   editComponent: EditComponent,
 }: {
   value: unknown

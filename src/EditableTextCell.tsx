@@ -13,8 +13,8 @@ export function EditableTextCell<T extends DocumentBase>({
   value,
   row,
   onEdit,
-  cellRenderer,
-  columnId,
+  cellRenderer: _cellRenderer,
+  columnId: _columnId,
 }: {
   value: unknown
   row: T
@@ -22,7 +22,7 @@ export function EditableTextCell<T extends DocumentBase>({
   cellRenderer: (value: unknown, row: T) => React.ReactNode
   columnId: string
 }) {
-  const [displayValue, setOptimistic] = useOptimisticValue(value)
+  const [, setOptimistic] = useOptimisticValue(value)
   const [localValue, setLocalValue] = useState(String(value ?? ''))
   const committedRef = useRef(String(value ?? ''))
   const cancellingRef = useRef(false)

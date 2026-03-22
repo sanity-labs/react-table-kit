@@ -1,7 +1,7 @@
 import {screen, within} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {useState} from 'react'
-import {describe, expect, it, vi} from 'vitest'
+import {describe, expect, it} from 'vitest'
 
 import {column} from '../src/columns'
 import {DocumentTable} from '../src/DocumentTable'

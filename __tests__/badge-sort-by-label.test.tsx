@@ -1,4 +1,4 @@
-import {screen, within, fireEvent} from '@testing-library/react'
+import {screen, within} from '@testing-library/react'
 import React from 'react'
 import {describe, it, expect} from 'vitest'
 

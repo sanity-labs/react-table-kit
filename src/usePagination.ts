@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useState} from 'react'
 
 export interface PaginationState {
   /** Current page (1-based) */
@@ -57,7 +57,7 @@ export function usePagination(totalItems: number, pageSize: number = 50): Pagina
     [totalPages],
   )
 
-  const resetToFirstPage = useCallback(() => {
+  const _resetToFirstPage = useCallback(() => {
     setPage(1)
   }, [])
 

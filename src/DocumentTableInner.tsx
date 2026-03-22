@@ -390,6 +390,8 @@ export function DocumentTableInner<T extends DocumentBase>({
         })
         .join(' ') ?? ''
     )
+    // Column sizing / order deps keep grid template in sync with TanStack column state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headerGroups, columnSizing, columnSizingInfo, tableColumnOrder])
 
   // Map column IDs to their display position (1-based for CSS grid-column)
@@ -401,6 +403,7 @@ export function DocumentTableInner<T extends DocumentBase>({
       map[h.id] = i + 1 // CSS grid-column is 1-based
     })
     return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headerGroups, tableColumnOrder, columnSizing])
 
   // Use our selection hook

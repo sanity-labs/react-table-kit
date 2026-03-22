@@ -78,6 +78,8 @@ export function useStableDocuments<T extends DocumentBase>(
   }
 
   // Schedule ghost state updates via effect (can't setState during render)
+  // Intentionally syncs ghost state after render; deps omitted to mirror render-time ghost recomputation.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ghostsChanged) {
       setGhostDocs(newGhosts)
@@ -87,7 +89,10 @@ export function useStableDocuments<T extends DocumentBase>(
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      for (const timeout of timeoutsRef.current.values()) {
+      // Snapshot the map at cleanup time (timeouts may have been added during the hook lifetime).
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const timeouts = timeoutsRef.current
+      for (const timeout of timeouts.values()) {
         clearTimeout(timeout)
       }
     }

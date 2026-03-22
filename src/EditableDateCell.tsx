@@ -13,7 +13,7 @@ export function EditableDateCell<T extends DocumentBase>({
   row,
   onEdit,
   cellRenderer,
-  columnId,
+  _columnId,
 }: {
   value: unknown
   row: T

@@ -62,7 +62,7 @@ export function GroupSection<T extends DocumentBase>({
                 <Checkbox
                   checked={!!allInGroupSelected}
                   indeterminate={!!someInGroupSelected}
-                  onChange={(e) => {
+                  onChange={(_e) => {
                     onSelectGroup?.(rows)
                   }}
                   aria-label={`Select all in ${groupName}`}

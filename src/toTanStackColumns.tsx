@@ -26,7 +26,7 @@ declare module '@tanstack/react-table' {
  */
 export function toTanStackColumns<T extends DocumentBase>(
   columns: ColumnDef<T>[],
-  hasSelection: boolean,
+  _hasSelection: boolean,
 ) {
   const helper = createColumnHelper<T>()
 

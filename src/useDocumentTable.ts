@@ -1,5 +1,4 @@
 import {
-  type RowSelectionState,
   type SortingState,
   createColumnHelper,
   flexRender,

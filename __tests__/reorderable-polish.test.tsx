@@ -1,15 +1,10 @@
 import {screen, within} from '@testing-library/react'
 import React from 'react'
-import {describe, it, expect, vi} from 'vitest'
+import {describe, expect, it} from 'vitest'
 
 import {column} from '../src/columns'
 import {DocumentTable} from '../src/DocumentTable'
 import {renderWithTheme} from './helpers'
-
-// Mock icon for testing
-function MockIcon(props: React.SVGProps<SVGSVGElement>) {
-  return <svg data-testid="mock-icon" {...props} />
-}
 
 const mockData = [
   {_id: 'doc-1', _type: 'article', title: 'First', status: 'draft', _updatedAt: '2026-01-01'},

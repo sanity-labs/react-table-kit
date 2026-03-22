@@ -1,6 +1,6 @@
 import {screen, within, fireEvent, waitFor} from '@testing-library/react'
 import React from 'react'
-import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest'
+import {describe, it, expect, vi} from 'vitest'
 
 import {column} from '../src/columns'
 import {DocumentTable} from '../src/DocumentTable'
