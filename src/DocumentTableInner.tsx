@@ -389,7 +389,7 @@ export function DocumentTableInner<T extends DocumentBase>({
     )
     // Column sizing / order deps keep grid template in sync with TanStack column state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [headerGroups, columnSizing, columnSizingInfo, tableColumnOrder])
+  }, [headerGroups, columnSizing, columnSizingInfo, columnOrder])
 
   // Map column IDs to their display position (1-based for CSS grid-column)
   // Used to render cells in fixed DOM order while controlling visual position via grid-column
@@ -401,7 +401,7 @@ export function DocumentTableInner<T extends DocumentBase>({
     })
     return map
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [headerGroups, tableColumnOrder, columnSizing])
+  }, [headerGroups, columnOrder, columnSizing])
 
   // Use our selection hook
   const rawSelection = useTableSelection(rowSelection, setRowSelection, data)
