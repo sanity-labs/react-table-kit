@@ -193,7 +193,8 @@ export function DocumentTableInner<T extends DocumentBase>({
   // Track which column is being dragged (for live reorder)
   const draggingColumnRef = useRef<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const isResizing = !!table.getState().columnSizingInfo.isResizingColumn
+  const {columnSizing, columnSizingInfo} = table.getState()
+  const isResizing = !!columnSizingInfo.isResizingColumn
 
   // Pragmatic drag-and-drop monitor for column reordering
   useEffect(() => {
