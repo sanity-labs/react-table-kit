@@ -12,14 +12,17 @@ import {
   Text,
   TextInput,
 } from '@sanity/ui'
+import {format} from 'date-fns'
 
-import type {DocumentBase} from './types'
+import type {ColumnDef, DocumentBase} from './types'
+import {parseRangeValue} from './useTableFilters'
 import type {UseTableFiltersResult} from './useTableFilters'
 
 interface FilterBarProps<T extends DocumentBase> {
   filters: UseTableFiltersResult<T>
   data: T[]
   filterableColumns: string[]
+  columns?: ColumnDef<T>[]
   groupableColumns?: string[]
   groupBy?: string | null
   onGroupByChange?: (value: string | null) => void
@@ -33,6 +36,7 @@ export function FilterBar<T extends DocumentBase>({
   filters,
   data,
   filterableColumns,
+  columns,
   groupableColumns,
   groupBy,
   onGroupByChange,
@@ -62,11 +66,24 @@ export function FilterBar<T extends DocumentBase>({
             </Label>
             <Flex gap={2} wrap="wrap" align="center">
               {filterableColumns.map((columnId) => {
+                const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
+                const isRange = colDef?.filterMode === 'range'
+                const label = colDef?.header ?? capitalize(columnId)
+
+                if (isRange) {
+                  return (
+                    <DateRangeFilter
+                      key={columnId}
+                      columnId={columnId}
+                      label={label}
+                      value={activeFilters[columnId]}
+                      onFilterChange={setFilter}
+                    />
+                  )
+                }
+
                 const options = getFilterOptions(columnId, data)
                 const currentValue = activeFilters[columnId]
-                const label =
-                  columnId.replace(/^_/, '').charAt(0).toUpperCase() +
-                  columnId.replace(/^_/, '').slice(1)
 
                 return (
                   <FilterDropdown
@@ -133,9 +150,31 @@ export function FilterBar<T extends DocumentBase>({
         <Flex gap={2} wrap="wrap" align="center">
           {Object.entries(activeFilters).map(([columnId, value]) => {
             if (value === undefined) return null
-            const label =
-              columnId.replace(/^_/, '').charAt(0).toUpperCase() +
-              columnId.replace(/^_/, '').slice(1)
+            const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
+            const label = colDef?.header ?? capitalize(columnId)
+
+            // Format range values nicely
+            const isRangeValue = value?.includes('..')
+            let chipText: string
+            if (isRangeValue) {
+              const {min, max} = parseRangeValue(value)
+              const formatDate = (d: string) => {
+                const date = new Date(d + 'T00:00:00') // local time
+                return format(date, 'MMM d')
+              }
+              const rangeText =
+                min && max
+                  ? `${formatDate(min)} → ${formatDate(max)}`
+                  : min
+                    ? `≥ ${formatDate(min)}`
+                    : max
+                      ? `≤ ${formatDate(max)}`
+                      : value
+              chipText = `${label}: ${rangeText}`
+            } else {
+              chipText = `${label}: ${value}`
+            }
+
             return (
               <Card
                 key={columnId}
@@ -145,9 +184,7 @@ export function FilterBar<T extends DocumentBase>({
                 tone="primary"
               >
                 <Flex align="center" gap={2}>
-                  <Text size={1}>
-                    {label}: {value}
-                  </Text>
+                  <Text size={1}>{chipText}</Text>
                   <Button
                     data-testid={`filter-chip-remove-${columnId}`}
                     icon={CloseIcon}
@@ -160,6 +197,27 @@ export function FilterBar<T extends DocumentBase>({
               </Card>
             )
           })}
+
+          {/* Computed filter chip */}
+          {filters.computedFilter && filters.computedFilters && (
+            <Card data-testid="filter-chip-computed" padding={2} radius={2} tone="primary">
+              <Flex align="center" gap={2}>
+                <Text size={1}>
+                  {filters.computedFilters[filters.computedFilter]?.label ??
+                    filters.computedFilter}
+                </Text>
+                <Button
+                  data-testid="filter-chip-remove-computed"
+                  icon={CloseIcon}
+                  mode="bleed"
+                  onClick={() => filters.setComputedFilter(null)}
+                  padding={1}
+                  fontSize={0}
+                />
+              </Flex>
+            </Card>
+          )}
+
           <Button
             fontSize={1}
             mode="bleed"
@@ -170,6 +228,68 @@ export function FilterBar<T extends DocumentBase>({
           />
         </Flex>
       )}
+    </Stack>
+  )
+}
+
+/** Helper to capitalize a column ID for display */
+function capitalize(str: string): string {
+  const cleaned = str.replace(/^_/, '')
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+}
+
+/** Date range filter with two native date inputs */
+function DateRangeFilter({
+  columnId,
+  label,
+  value,
+  onFilterChange,
+}: {
+  columnId: string
+  label: string
+  value: string | undefined
+  onFilterChange: (columnId: string, value: string | undefined) => void
+}) {
+  const {min, max} = value ? parseRangeValue(value) : {min: undefined, max: undefined}
+
+  const handleFromChange = (from: string) => {
+    if (!from && !max) {
+      onFilterChange(columnId, undefined)
+    } else {
+      onFilterChange(columnId, `${from || ''}..${max || ''}`)
+    }
+  }
+
+  const handleToChange = (to: string) => {
+    if (!min && !to) {
+      onFilterChange(columnId, undefined)
+    } else {
+      onFilterChange(columnId, `${min || ''}..${to || ''}`)
+    }
+  }
+
+  return (
+    <Stack space={2}>
+      <Label size={1} muted>
+        {label}
+      </Label>
+      <Flex gap={2} align="center">
+        <input
+          type="date"
+          data-testid={`filter-range-from-${columnId}`}
+          value={min || ''}
+          onChange={(e) => handleFromChange(e.target.value)}
+        />
+        <Text size={1} muted>
+          →
+        </Text>
+        <input
+          type="date"
+          data-testid={`filter-range-to-${columnId}`}
+          value={max || ''}
+          onChange={(e) => handleToChange(e.target.value)}
+        />
+      </Flex>
     </Stack>
   )
 }
