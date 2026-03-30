@@ -160,6 +160,8 @@ interface DateColumnConfig<T extends DocumentBase = DocumentBase> extends BaseCo
   toneByDateRange?: boolean
   /** Inline date editing. Pass `true` for SDK auto-save. */
   edit?: true | DateEditConfig<T>
+  /** Filter mode override. Defaults to 'range' when filterable is true. */
+  filterMode?: 'exact' | 'range'
 }
 
 /**
@@ -191,6 +193,10 @@ interface CustomColumnConfig<T extends DocumentBase = DocumentBase> extends Base
    * Full ColumnEditConfig — any mode is available on custom columns.
    */
   edit?: ColumnEditConfig<T>
+  /** Custom filter predicate. */
+  filterFn?: (row: T, filterValue: string) => boolean
+  /** Filter mode override. */
+  filterMode?: 'exact' | 'range'
 }
 
 // ─── Helpers to widen narrowed configs into full ColumnEditConfig ─────────────
@@ -404,6 +410,8 @@ export const column = {
       flex,
       width,
       edit,
+      filterFn,
+      filterMode,
     } = config
 
     return {
@@ -420,6 +428,8 @@ export const column = {
       ...(flex != null && {flex}),
       ...(width != null && {width}),
       ...(edit && {edit}),
+      ...(filterFn && {filterFn}),
+      ...(filterMode != null && {filterMode}),
     }
   },
 
@@ -599,6 +609,7 @@ export const column = {
         return <Text size={1}>{displayText}</Text>
       },
       ...(filterable != null && {filterable}),
+      ...(filterable && {filterMode: config.filterMode ?? 'range'}),
       ...(groupable != null && {groupable}),
       ...(searchable != null && {searchable}),
       ...(flex != null && {flex}),
