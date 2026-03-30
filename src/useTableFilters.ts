@@ -7,10 +7,23 @@ export interface FilterState {
   [columnId: string]: string | undefined
 }
 
+export interface ColumnFilterConfig {
+  id: string
+  filterMode: 'exact' | 'range'
+  filterFn?: (row: any, filterValue: string) => boolean
+}
+
+export interface ComputedFilterConfig<T extends DocumentBase = DocumentBase> {
+  label: string
+  predicate: (row: T) => boolean
+}
+
 export interface UseTableFiltersConfig {
   filterableColumns: string[]
+  columns?: ColumnFilterConfig[]
   searchableFields?: string[]
   searchDebounceMs?: number
+  computedFilters?: Record<string, ComputedFilterConfig>
 }
 
 export interface UseTableFiltersResult<T extends DocumentBase> {
@@ -24,12 +37,75 @@ export interface UseTableFiltersResult<T extends DocumentBase> {
   hasActiveFilters: boolean
   getFilterOptions: (columnId: string, data: T[]) => string[]
   applyFilters: (data: T[]) => T[]
+  computedFilter: string | null
+  setComputedFilter: (name: string | null) => void
+  computedFilters?: Record<string, ComputedFilterConfig<T>>
+}
+
+/**
+ * Parse a range value string in the format `min..max`.
+ * Supports open-ended ranges: `min..` (>= min) and `..max` (<= max).
+ */
+export function parseRangeValue(value: string): {min?: string; max?: string} {
+  const separatorIndex = value.indexOf('..')
+  if (separatorIndex === -1) {
+    return {min: value, max: value}
+  }
+  const min = value.slice(0, separatorIndex) || undefined
+  const max = value.slice(separatorIndex + 2) || undefined
+  return {min, max}
+}
+
+/**
+ * Apply a range comparison on a document value.
+ * Works for both ISO date strings (lexicographic comparison) and numbers.
+ */
+function applyRangeFilter(
+  docValue: unknown,
+  min: string | undefined,
+  max: string | undefined,
+): boolean {
+  if (docValue == null) return false
+
+  const isNumeric =
+    typeof docValue === 'number' ||
+    (typeof docValue === 'string' && !isNaN(Number(docValue)) && (min == null || !isNaN(Number(min))))
+
+  if (isNumeric) {
+    const numValue = Number(docValue)
+    if (min != null && numValue < Number(min)) return false
+    if (max != null && numValue > Number(max)) return false
+    return true
+  }
+
+  // String/date comparison (lexicographic — works for ISO dates)
+  const strValue = String(docValue)
+  if (min != null && strValue < min) return false
+  if (max != null && strValue > max) return false
+  return true
 }
 
 export function useTableFilters<T extends DocumentBase>(
   config: UseTableFiltersConfig,
 ): UseTableFiltersResult<T> {
-  const {filterableColumns, searchableFields = [], searchDebounceMs = 300} = config
+  const {
+    filterableColumns,
+    columns: columnConfigs,
+    searchableFields = [],
+    searchDebounceMs = 300,
+    computedFilters: computedFiltersConfig,
+  } = config
+
+  // Build a lookup map from column configs for O(1) access
+  const columnConfigMap = useMemo(() => {
+    const map = new Map<string, ColumnFilterConfig>()
+    if (columnConfigs) {
+      for (const col of columnConfigs) {
+        map.set(col.id, col)
+      }
+    }
+    return map
+  }, [columnConfigs])
 
   // Build a stable key map for nuqs useQueryStates
   const filterKeyMap = useMemo(() => {
@@ -45,6 +121,12 @@ export function useTableFilters<T extends DocumentBase>(
   // URL-synced search via nuqs
   const [searchParam, setSearchParam] = useQueryState(
     'search',
+    parseAsString.withOptions({history: 'replace'}),
+  )
+
+  // URL-synced computed filter via nuqs
+  const [computedFilterParam, setComputedFilterParam] = useQueryState(
+    'computed',
     parseAsString.withOptions({history: 'replace'}),
   )
 
@@ -96,6 +178,13 @@ export function useTableFilters<T extends DocumentBase>(
     [setFilterParams],
   )
 
+  const setComputedFilter = useCallback(
+    (name: string | null) => {
+      setComputedFilterParam(name)
+    },
+    [setComputedFilterParam],
+  )
+
   const clearAll = useCallback(() => {
     const nulls: Record<string, null> = {}
     for (const col of filterableColumns) {
@@ -105,11 +194,17 @@ export function useTableFilters<T extends DocumentBase>(
     setSearchInputValue('')
     setSearchQuery('')
     setSearchParam(null)
-  }, [filterableColumns, setFilterParams, setSearchParam])
+    setComputedFilterParam(null)
+  }, [filterableColumns, setFilterParams, setSearchParam, setComputedFilterParam])
+
+  const computedFilter = computedFilterParam ?? null
 
   const hasActiveFilters = useMemo(
-    () => Object.values(filters).some((v) => v !== undefined) || searchQuery.length > 0,
-    [filters, searchQuery],
+    () =>
+      Object.values(filters).some((v) => v !== undefined) ||
+      searchQuery.length > 0 ||
+      computedFilter != null,
+    [filters, searchQuery, computedFilter],
   )
 
   const getFilterOptions = useCallback((columnId: string, data: T[]): string[] => {
@@ -124,10 +219,27 @@ export function useTableFilters<T extends DocumentBase>(
   const applyFilters = useCallback(
     (data: T[]): T[] => {
       let result = data
+
+      // Apply column filters with dispatch by mode
       for (const [columnId, filterValue] of Object.entries(filters)) {
         if (filterValue === undefined) continue
-        result = result.filter((doc) => String(doc[columnId]) === filterValue)
+
+        const colConfig = columnConfigMap.get(columnId)
+
+        if (colConfig?.filterFn) {
+          // Custom filter function takes priority
+          result = result.filter((doc) => colConfig.filterFn!(doc, filterValue))
+        } else if (colConfig?.filterMode === 'range') {
+          // Range filter: parse min..max and compare
+          const {min, max} = parseRangeValue(filterValue)
+          result = result.filter((doc) => applyRangeFilter(doc[columnId], min, max))
+        } else {
+          // Default: exact match
+          result = result.filter((doc) => String(doc[columnId]) === filterValue)
+        }
       }
+
+      // Apply search filter
       if (searchQuery.length > 0) {
         const query = searchQuery.toLowerCase()
         result = result.filter((doc) =>
@@ -137,9 +249,18 @@ export function useTableFilters<T extends DocumentBase>(
           }),
         )
       }
+
+      // Apply computed filter
+      if (computedFilter != null && computedFiltersConfig) {
+        const computedConfig = computedFiltersConfig[computedFilter]
+        if (computedConfig) {
+          result = result.filter((doc) => computedConfig.predicate(doc as T))
+        }
+      }
+
       return result
     },
-    [filters, searchQuery, searchableFields],
+    [filters, searchQuery, searchableFields, columnConfigMap, computedFilter, computedFiltersConfig],
   )
 
   return {
@@ -153,5 +274,8 @@ export function useTableFilters<T extends DocumentBase>(
     hasActiveFilters,
     getFilterOptions,
     applyFilters,
+    computedFilter,
+    setComputedFilter,
+    computedFilters: computedFiltersConfig as Record<string, ComputedFilterConfig<T>> | undefined,
   }
 }

@@ -111,6 +111,20 @@ export interface ColumnDef<T extends DocumentBase = DocumentBase> {
   filterable?: boolean
 
   /**
+   * Filter mode for this column.
+   * - `'exact'` (default): exact string match via dropdown.
+   * - `'range'`: min..max range comparison for dates and numbers.
+   */
+  filterMode?: 'exact' | 'range'
+
+  /**
+   * Custom filter predicate for cross-field computed conditions.
+   * When set, `applyFilters` calls this function instead of the default
+   * exact/range comparison. Receives the row and the current filter value.
+   */
+  filterFn?: (row: T, filterValue: string) => boolean
+
+  /**
    * Whether rows can be grouped by this column's values.
    * Defaults vary by column helper (e.g. `column.type()` defaults to `true`).
    */

@@ -29,7 +29,12 @@ export type {
   DocumentRow,
   DocumentCell,
 } from './useDocumentTable'
-export type {FilterState, UseTableFiltersResult} from './useTableFilters'
+export type {
+  FilterState,
+  UseTableFiltersResult,
+  ColumnFilterConfig,
+  ComputedFilterConfig,
+} from './useTableFilters'
 export type {GroupedData, UseTableGroupingResult} from './useTableGrouping'
 export type {TableSelection, SelectionState} from './useTableSelection'
 export type {PaginationState} from './usePagination'
