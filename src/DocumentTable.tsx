@@ -30,6 +30,7 @@ export function DocumentTable<T extends DocumentBase>({
   onCreateDocument,
   createButtonText,
   isCreating,
+  computedFilters,
 }: DocumentTableProps<T>) {
   const filterableColumns = useMemo(
     () => columns.filter((c) => c.filterable).map((c) => c.field ?? c.id),
@@ -47,9 +48,22 @@ export function DocumentTable<T extends DocumentBase>({
     () => columns.filter((c) => c.groupable).map((c) => c.field ?? c.id),
     [columns],
   )
+  const columnFilterConfigs = useMemo(
+    () =>
+      columns
+        .filter((c) => c.filterable || c.filterFn || c.filterMode)
+        .map((c) => ({
+          id: c.field ?? c.id,
+          filterMode: (c.filterMode ?? 'exact') as const,
+          ...(c.filterFn && {filterFn: c.filterFn}),
+        })),
+    [columns],
+  )
   const filters = useTableFilters<T>({
     filterableColumns,
+    columns: columnFilterConfigs,
     searchableFields,
+    computedFilters,
   })
 
   const grouping = useTableGrouping<T>()
@@ -116,6 +130,7 @@ export function DocumentTable<T extends DocumentBase>({
           filters={filters}
           data={displayData}
           filterableColumns={filterableColumns}
+          columns={columns}
           groupableColumns={groupableColumns}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}

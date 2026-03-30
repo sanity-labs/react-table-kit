@@ -234,4 +234,13 @@ export interface DocumentTableProps<T extends DocumentBase = DocumentBase> {
 
   /** Called when column order changes via drag-and-drop. */
   onColumnOrderChange?: (newOrder: string[]) => void
+
+  /** Named computed filters that can be activated externally (e.g., by stats cards). */
+  computedFilters?: Record<
+    string,
+    {
+      label: string
+      predicate: (row: T) => boolean
+    }
+  >
 }
