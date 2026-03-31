@@ -1,11 +1,62 @@
 import {Badge, Card, Checkbox, Flex, Label, Text} from '@sanity/ui'
 import {flexRender, Row} from '@tanstack/react-table'
 import {motion} from 'framer-motion'
+import {Suspense} from 'react'
 
 import type {DocumentBase} from './types'
 
+function getPlaceholderWidth(columnId: string) {
+  if (columnId === 'select' || columnId === '_select') return '16px'
+  if (columnId === 'openInStudio') return '20px'
+  if (columnId === '_status') return '24px'
+  return '70%'
+}
+
+function LoadingGroupRow({
+  gridTemplateColumns,
+  columnIds,
+  columnPositionMap,
+}: {
+  gridTemplateColumns: string
+  columnIds: string[]
+  columnPositionMap: Record<string, number>
+}) {
+  return (
+    <div
+      role="row"
+      style={{
+        display: 'grid',
+        gridTemplateColumns,
+        borderBottom: '1px solid var(--card-border-color)',
+      }}
+    >
+      {columnIds.map((columnId) => (
+        <div
+          key={columnId}
+          role="cell"
+          style={{
+            padding: '10px 16px',
+            borderRight: '1px solid var(--card-border-color)',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            gridColumn: columnPositionMap[columnId],
+          }}
+        >
+          {columnId === 'select' || columnId === '_select' ? (
+            <Checkbox aria-label="Loading selection" checked={false} disabled />
+          ) : columnId === '_status' || columnId === 'openInStudio' ? null : (
+            <div className="loading-row-skeleton" style={{width: getPlaceholderWidth(columnId)}} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /** Group section with header and collapsible rows */
 export function GroupSection<T extends DocumentBase>({
+  columnIds,
   groupName,
   rows,
   isCollapsed,
@@ -19,6 +70,7 @@ export function GroupSection<T extends DocumentBase>({
   rowSelection,
   onSelectGroup,
 }: {
+  columnIds: string[]
   groupName: string
   rows: Row<T>[]
   isCollapsed: boolean
@@ -87,47 +139,57 @@ export function GroupSection<T extends DocumentBase>({
         </div>
       </Card>
       {rows.map((row, i) => (
-        <div
-          role="row"
+        <Suspense
           key={row.id}
-          style={{
-            display: isCollapsed ? 'none' : 'grid',
-            gridTemplateColumns,
-            borderBottom: '1px solid var(--card-border-color)',
-            backgroundColor:
-              i % 2 === 0 ? 'var(--card-code-bg-color, var(--card-bg2-color))' : undefined,
-          }}
+          fallback={
+            <LoadingGroupRow
+              gridTemplateColumns={gridTemplateColumns}
+              columnIds={columnIds}
+              columnPositionMap={columnPositionMap}
+            />
+          }
         >
-          {row.getAllCells().map((cell) => {
-            const isEditable = cell.column.columnDef.meta?.editable as boolean
-            const isTextEdit = cell.column.columnDef.meta?.editMode === 'text'
-            return (
-              <motion.div
-                layout={isDragging && !isResizing ? 'position' : undefined}
-                layoutId={reorderable ? `gcell-${cell.id}` : undefined}
-                transition={
-                  isDragging && !isResizing
-                    ? {type: 'spring', stiffness: 500, damping: 35}
-                    : {duration: 0}
-                }
-                role="cell"
-                key={cell.id}
-                className={isTextEdit ? 'editable-text' : undefined}
-                style={{
-                  padding: isTextEdit ? 0 : '10px 16px',
-                  cursor: isEditable ? 'pointer' : undefined,
-                  borderRight: '1px solid var(--card-border-color)',
-                  overflow: 'hidden',
-                  display: isTextEdit ? undefined : 'flex',
-                  alignItems: isTextEdit ? undefined : 'center',
-                  gridColumn: reorderable ? columnPositionMap[cell.column.id] : undefined,
-                }}
-              >
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </motion.div>
-            )
-          })}
-        </div>
+          <div
+            role="row"
+            style={{
+              display: isCollapsed ? 'none' : 'grid',
+              gridTemplateColumns,
+              borderBottom: '1px solid var(--card-border-color)',
+              backgroundColor:
+                i % 2 === 0 ? 'var(--card-code-bg-color, var(--card-bg2-color))' : undefined,
+            }}
+          >
+            {row.getAllCells().map((cell) => {
+              const isEditable = cell.column.columnDef.meta?.editable as boolean
+              const isTextEdit = cell.column.columnDef.meta?.editMode === 'text'
+              return (
+                <motion.div
+                  layout={isDragging && !isResizing ? 'position' : undefined}
+                  layoutId={reorderable ? `gcell-${cell.id}` : undefined}
+                  transition={
+                    isDragging && !isResizing
+                      ? {type: 'spring', stiffness: 500, damping: 35}
+                      : {duration: 0}
+                  }
+                  role="cell"
+                  key={cell.id}
+                  className={isTextEdit ? 'editable-text' : undefined}
+                  style={{
+                    padding: isTextEdit ? 0 : '10px 16px',
+                    cursor: isEditable ? 'pointer' : undefined,
+                    borderRight: '1px solid var(--card-border-color)',
+                    overflow: 'hidden',
+                    display: isTextEdit ? undefined : 'flex',
+                    alignItems: isTextEdit ? undefined : 'center',
+                    gridColumn: reorderable ? columnPositionMap[cell.column.id] : undefined,
+                  }}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </motion.div>
+              )
+            })}
+          </div>
+        </Suspense>
       ))}
     </>
   )

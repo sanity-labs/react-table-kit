@@ -161,6 +161,15 @@ export interface SortConfig {
   direction: 'asc' | 'desc'
 }
 
+export interface ServerSortConfig {
+  /** Currently active sort from the backing data source. */
+  sort: SortConfig | null
+  /** Invoked when the user changes sort so the backing data source can re-query. */
+  onSortChange: (sort: SortConfig | null) => void
+  /** Optional allow-list of sortable column IDs while in server-sort mode. */
+  sortableColumnIds?: string[]
+}
+
 /**
  * Current selection state, passed to bulk action renderers.
  *
@@ -192,12 +201,17 @@ export interface DocumentTableProps<T extends DocumentBase = DocumentBase> {
 
   /** Initial sort state. */
   defaultSort?: SortConfig
+  /** Controlled server-side sorting contract. */
+  serverSort?: ServerSortConfig
 
   /** Called when a row is clicked (not on the select checkbox). */
   onRowClick?: (row: T) => void
 
   /** Show a loading skeleton. */
   loading?: boolean
+
+  /** Number of placeholder rows to render during transition loading states. */
+  transitionLoadingRowCount?: number
 
   /** Message displayed when `data` is an empty array. */
   emptyMessage?: string

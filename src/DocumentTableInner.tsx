@@ -4,7 +4,7 @@ import {
   monitorForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import {AddIcon} from '@sanity/icons'
-import {Button, Card, Stack, Text} from '@sanity/ui'
+import {Button, Card, Checkbox, Stack, Text} from '@sanity/ui'
 import {
   type PaginationState as TanStackPaginationState,
   type RowSelectionState,
@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-table'
 import {motion, LayoutGroup} from 'framer-motion'
 import {useQueryState, parseAsString, parseAsInteger} from 'nuqs'
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react'
 
 import {BulkActionBar} from './BulkActionBar'
 import {GroupSection} from './GroupSection'
@@ -28,11 +28,63 @@ import type {ColumnDef, DocumentBase, DocumentTableProps} from './types'
 import type {useTableGrouping} from './useTableGrouping'
 import {useTableSelection} from './useTableSelection'
 
+function getPlaceholderWidth(columnId: string) {
+  if (columnId === 'select' || columnId === '_select') return '16px'
+  if (columnId === 'openInStudio') return '20px'
+  if (columnId === '_status') return '24px'
+  return '70%'
+}
+
 /** Inner component — only renders when we have data */
+function LoadingRow({
+  gridTemplateColumns,
+  columnIds,
+  columnPositionMap,
+}: {
+  gridTemplateColumns: string
+  columnIds: string[]
+  columnPositionMap: Record<string, number>
+}) {
+  return (
+    <div
+      role="row"
+      style={{
+        display: 'grid',
+        gridTemplateColumns,
+        borderBottom: '1px solid var(--card-border-color)',
+      }}
+    >
+      {columnIds.map((columnId) => (
+        <div
+          key={columnId}
+          role="cell"
+          style={{
+            padding: '10px 16px',
+            borderRight: '1px solid var(--card-border-color)',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            gridColumn: columnPositionMap[columnId],
+          }}
+        >
+          {columnId === 'select' || columnId === '_select' ? (
+            <Checkbox aria-label="Loading selection" checked={false} disabled />
+          ) : columnId === '_status' || columnId === 'openInStudio' ? null : (
+            <div className="loading-row-skeleton" style={{width: getPlaceholderWidth(columnId)}} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function DocumentTableInner<T extends DocumentBase>({
   data,
   columns,
   defaultSort,
+  serverSort,
+  showPlaceholderRows,
+  placeholderRowCount,
   grouping,
   stripedRows,
   bulkActions,
@@ -48,6 +100,9 @@ export function DocumentTableInner<T extends DocumentBase>({
   data: T[]
   columns: ColumnDef<T>[]
   defaultSort?: {field: string; direction: 'asc' | 'desc'}
+  serverSort?: DocumentTableProps<T>['serverSort']
+  showPlaceholderRows?: boolean
+  placeholderRowCount?: number
   grouping: ReturnType<typeof useTableGrouping<T>>
   stripedRows?: boolean
   bulkActions?: DocumentTableProps<T>['bulkActions']
@@ -81,12 +136,16 @@ export function DocumentTableInner<T extends DocumentBase>({
     : defaultSort
       ? [{id: defaultSort.field, desc: defaultSort.direction === 'desc'}]
       : []
+  const controlledSorting: SortingState =
+    serverSort?.sort == null
+      ? []
+      : [{id: serverSort.sort.field, desc: serverSort.sort.direction === 'desc'}]
 
-  const [sorting, setSortingRaw] = useState<SortingState>(initialSorting)
+  const [clientSorting, setClientSortingRaw] = useState<SortingState>(initialSorting)
 
   const setSorting = useCallback(
     (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-      setSortingRaw((prev) => {
+      const applyNextSort = (prev: SortingState) => {
         const next = typeof updater === 'function' ? updater(prev) : updater
         if (next.length > 0) {
           setSortParam(next[0].id)
@@ -96,10 +155,26 @@ export function DocumentTableInner<T extends DocumentBase>({
           setDirParam(null)
         }
         return next
-      })
+      }
+
+      if (serverSort) {
+        const next = applyNextSort(controlledSorting)
+        serverSort.onSortChange(
+          next.length > 0
+            ? {
+                field: next[0].id,
+                direction: next[0].desc ? 'desc' : 'asc',
+              }
+            : null,
+        )
+        return
+      }
+
+      setClientSortingRaw((prev) => applyNextSort(prev))
     },
-    [setSortParam, setDirParam],
+    [controlledSorting, serverSort, setSortParam, setDirParam],
   )
+  const sorting = serverSort ? controlledSorting : clientSorting
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [selectAllMode, setSelectAllMode] = useState(false)
 
@@ -171,7 +246,7 @@ export function DocumentTableInner<T extends DocumentBase>({
     data,
     columns: tanstackColumns,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    ...(!serverSort ? {getSortedRowModel: getSortedRowModel()} : {}),
     ...(hasPagination ? {getPaginationRowModel: getPaginationRowModel()} : {}),
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
@@ -182,6 +257,7 @@ export function DocumentTableInner<T extends DocumentBase>({
       pagination: paginationState,
       ...(columnOrder.length > 0 && {columnOrder}),
     },
+    manualSorting: !!serverSort,
     enableRowSelection: hasSelection,
     enableColumnResizing: true,
     columnResizeMode: 'onChange',
@@ -296,6 +372,10 @@ export function DocumentTableInner<T extends DocumentBase>({
   const {groupBy, collapsedGroups, toggleGroup} = grouping
 
   const sortedRows = table.getRowModel().rows
+  const loadingRows = useMemo(
+    () => Array.from({length: (placeholderRowCount ?? paginationState.pageSize) || 0}),
+    [paginationState.pageSize, placeholderRowCount],
+  )
 
   // Auto-size columns on first render and when data reappears after being empty
   // (e.g., clearing filters that previously showed 0 results in grouped mode)
@@ -357,6 +437,10 @@ export function DocumentTableInner<T extends DocumentBase>({
   }, [groupBy, sortedRows])
 
   const headerGroups = table.getHeaderGroups()
+  const visibleColumnIds = useMemo(
+    () => (headerGroups[0]?.headers ?? []).map((header) => header.id),
+    [headerGroups],
+  )
 
   const gridTemplateColumns = useMemo(() => {
     const headers = headerGroups[0]?.headers ?? []
@@ -429,6 +513,17 @@ export function DocumentTableInner<T extends DocumentBase>({
   return (
     <Stack space={0}>
       <style>{`
+        @keyframes sanity-table-row-skeleton-pulse {
+          0% {
+            opacity: 0.55;
+          }
+          50% {
+            opacity: 0.9;
+          }
+          100% {
+            opacity: 0.55;
+          }
+        }
         .sanity-table .editable-text:focus-within {
           outline: 2px solid var(--card-focus-ring-color, #2276fc);
           outline-offset: -2px;
@@ -437,6 +532,12 @@ export function DocumentTableInner<T extends DocumentBase>({
         .sanity-table .editable-text [data-ui="TextArea"] *  {
           background: transparent !important;
           background-color: transparent !important;
+        }
+        .sanity-table .loading-row-skeleton {
+          height: 24px;
+          border-radius: 6px;
+          background: var(--card-code-bg-color, var(--card-bg2-color));
+          animation: sanity-table-row-skeleton-pulse 1.4s ease-in-out infinite;
         }
       `}</style>
       {showSelectAllBanner && (
@@ -493,7 +594,11 @@ export function DocumentTableInner<T extends DocumentBase>({
                       style={{display: 'grid', gridTemplateColumns}}
                     >
                       {headerGroup.headers.map((header) => {
-                        const canSort = header.column.getCanSort()
+                        const canSort =
+                          header.column.getCanSort() &&
+                          (!serverSort ||
+                            !serverSort.sortableColumnIds ||
+                            serverSort.sortableColumnIds.includes(header.id))
                         const sorted = header.column.getIsSorted()
                         const ariaSort =
                           sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
@@ -619,90 +724,110 @@ export function DocumentTableInner<T extends DocumentBase>({
                   ))}
                 </div>
                 <div role="rowgroup">
-                  {groups
-                    ? // Grouped rendering
-                      groups.map((group) => {
-                        const isCollapsed = collapsedGroups.has(group.name)
-                        return (
-                          <GroupSection
-                            key={group.name}
-                            groupName={group.name}
-                            rows={group.rows}
-                            isCollapsed={isCollapsed}
-                            onToggle={() => toggleGroup(group.name)}
-                            gridTemplateColumns={gridTemplateColumns}
-                            reorderable={reorderable}
-                            columnPositionMap={columnPositionMap}
-                            isDragging={isDragging}
-                            isResizing={isResizing}
-                            hasSelection={hasSelection}
-                            rowSelection={rowSelection}
-                            onSelectGroup={(groupRows) => {
-                              const allSelected = groupRows.every((row) => rowSelection[row.id])
-                              setRowSelection((prev) => {
-                                const next = {...prev}
-                                groupRows.forEach((row) => {
-                                  if (allSelected) {
-                                    delete next[row.id]
-                                  } else {
-                                    next[row.id] = true
-                                  }
+                  {showPlaceholderRows
+                    ? loadingRows.map((_, index) => (
+                        <LoadingRow
+                          key={`loading-row-${index}`}
+                          gridTemplateColumns={gridTemplateColumns}
+                          columnIds={visibleColumnIds}
+                          columnPositionMap={columnPositionMap}
+                        />
+                      ))
+                    : groups
+                      ? // Grouped rendering
+                        groups.map((group) => {
+                          const isCollapsed = collapsedGroups.has(group.name)
+                          return (
+                            <GroupSection
+                              key={group.name}
+                              columnIds={visibleColumnIds}
+                              groupName={group.name}
+                              rows={group.rows}
+                              isCollapsed={isCollapsed}
+                              onToggle={() => toggleGroup(group.name)}
+                              gridTemplateColumns={gridTemplateColumns}
+                              reorderable={reorderable}
+                              columnPositionMap={columnPositionMap}
+                              isDragging={isDragging}
+                              isResizing={isResizing}
+                              hasSelection={hasSelection}
+                              rowSelection={rowSelection}
+                              onSelectGroup={(groupRows) => {
+                                const allSelected = groupRows.every((row) => rowSelection[row.id])
+                                setRowSelection((prev) => {
+                                  const next = {...prev}
+                                  groupRows.forEach((row) => {
+                                    if (allSelected) {
+                                      delete next[row.id]
+                                    } else {
+                                      next[row.id] = true
+                                    }
+                                  })
+                                  return next
                                 })
-                                return next
-                              })
-                            }}
-                          />
-                        )
-                      })
-                    : // Flat rendering
-                      sortedRows.map((row, i) => (
-                        <div
-                          role="row"
-                          key={row.id}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns,
-                            borderBottom: '1px solid var(--card-border-color)',
-                            backgroundColor: stripedRows
-                              ? i % 2 === 1
-                                ? 'var(--card-code-bg-color, var(--card-bg2-color))'
-                                : undefined
-                              : undefined,
-                          }}
-                        >
-                          {row.getAllCells().map((cell) => {
-                            const isEditable = cell.column.columnDef.meta?.editable
-                            const isTextEdit = cell.column.columnDef.meta?.editMode === 'text'
-                            return (
-                              <motion.div
-                                layout={isDragging && !isResizing ? 'position' : undefined}
-                                layoutId={reorderable ? `cell-${cell.id}` : undefined}
-                                transition={
-                                  isDragging && !isResizing
-                                    ? {type: 'spring', stiffness: 500, damping: 35}
-                                    : {duration: 0}
-                                }
-                                key={cell.id}
-                                role="cell"
-                                className={isTextEdit ? 'editable-text' : undefined}
-                                style={{
-                                  padding: isTextEdit ? 0 : '10px 16px',
-                                  cursor: isEditable ? 'pointer' : undefined,
-                                  borderRight: '1px solid var(--card-border-color)',
-                                  overflow: 'hidden',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gridColumn: reorderable
-                                    ? columnPositionMap[cell.column.id]
-                                    : undefined,
-                                }}
-                              >
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </motion.div>
-                            )
-                          })}
-                        </div>
-                      ))}
+                              }}
+                            />
+                          )
+                        })
+                      : // Flat rendering
+                        sortedRows.map((row, i) => (
+                          <Suspense
+                            key={row.id}
+                            fallback={
+                              <LoadingRow
+                                gridTemplateColumns={gridTemplateColumns}
+                                columnIds={visibleColumnIds}
+                                columnPositionMap={columnPositionMap}
+                              />
+                            }
+                          >
+                            <div
+                              role="row"
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns,
+                                borderBottom: '1px solid var(--card-border-color)',
+                                backgroundColor: stripedRows
+                                  ? i % 2 === 1
+                                    ? 'var(--card-code-bg-color, var(--card-bg2-color))'
+                                    : undefined
+                                  : undefined,
+                              }}
+                            >
+                              {row.getAllCells().map((cell) => {
+                                const isEditable = cell.column.columnDef.meta?.editable
+                                const isTextEdit = cell.column.columnDef.meta?.editMode === 'text'
+                                return (
+                                  <motion.div
+                                    layout={isDragging && !isResizing ? 'position' : undefined}
+                                    layoutId={reorderable ? `cell-${cell.id}` : undefined}
+                                    transition={
+                                      isDragging && !isResizing
+                                        ? {type: 'spring', stiffness: 500, damping: 35}
+                                        : {duration: 0}
+                                    }
+                                    key={cell.id}
+                                    role="cell"
+                                    className={isTextEdit ? 'editable-text' : undefined}
+                                    style={{
+                                      padding: isTextEdit ? 0 : '10px 16px',
+                                      cursor: isEditable ? 'pointer' : undefined,
+                                      borderRight: '1px solid var(--card-border-color)',
+                                      overflow: 'hidden',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gridColumn: reorderable
+                                        ? columnPositionMap[cell.column.id]
+                                        : undefined,
+                                    }}
+                                  >
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                  </motion.div>
+                                )
+                              })}
+                            </div>
+                          </Suspense>
+                        ))}
                 </div>
               </div>
               {/* Add Document button */}

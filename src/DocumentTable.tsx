@@ -18,7 +18,9 @@ export function DocumentTable<T extends DocumentBase>({
   data,
   columns,
   defaultSort,
-  loading: _loading,
+  serverSort,
+  loading = false,
+  transitionLoadingRowCount,
   emptyMessage = 'No documents found',
   stripedRows = false,
   bulkActions,
@@ -78,6 +80,7 @@ export function DocumentTable<T extends DocumentBase>({
   }
   const displayData = data ?? prevDataRef.current
   const isInitialLoad = displayData === undefined
+  const showTransitionLoading = !isInitialLoad && loading && (transitionLoadingRowCount ?? 0) > 0
 
   const filteredData = useMemo(
     () => (displayData ? filters.applyFilters(displayData) : undefined),
@@ -136,7 +139,7 @@ export function DocumentTable<T extends DocumentBase>({
           onGroupByChange={setGroupBy}
         />
       )}
-      {filteredData && filteredData.length === 0 ? (
+      {!showTransitionLoading && filteredData && filteredData.length === 0 ? (
         <Card padding={5} radius={2}>
           <Stack space={3} style={{textAlign: 'center'}}>
             <Text muted size={2}>
@@ -149,6 +152,9 @@ export function DocumentTable<T extends DocumentBase>({
           data={filteredData ?? displayData}
           columns={columns}
           defaultSort={defaultSort}
+          serverSort={serverSort}
+          showPlaceholderRows={showTransitionLoading}
+          placeholderRowCount={transitionLoadingRowCount}
           grouping={grouping}
           stripedRows={stripedRows}
           bulkActions={bulkActions}
