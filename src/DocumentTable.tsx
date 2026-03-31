@@ -33,6 +33,7 @@ export function DocumentTable<T extends DocumentBase>({
   createButtonText,
   isCreating,
   computedFilters,
+  hideFilterBar = false,
 }: DocumentTableProps<T>) {
   const filterableColumns = useMemo(
     () => columns.filter((c) => c.filterable).map((c) => c.field ?? c.id),
@@ -89,7 +90,8 @@ export function DocumentTable<T extends DocumentBase>({
   )
 
   const showFilterBar =
-    filterableColumns.length > 0 || searchableFields.length > 0 || groupableColumns.length > 0
+    !hideFilterBar &&
+    (filterableColumns.length > 0 || searchableFields.length > 0 || groupableColumns.length > 0)
 
   // Loading skeleton — only on initial load (no data ever received)
   if (isInitialLoad) {

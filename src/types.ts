@@ -257,4 +257,7 @@ export interface DocumentTableProps<T extends DocumentBase = DocumentBase> {
       predicate: (row: T) => boolean
     }
   >
+
+  /** Hide the legacy built-in filter bar. */
+  hideFilterBar?: boolean
 }

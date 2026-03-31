@@ -1,6 +1,6 @@
 import {renderHook, act} from '@testing-library/react'
-import {describe, it, expect, vi, beforeEach} from 'vitest'
 import {useState, useCallback} from 'react'
+import {describe, it, expect, vi, beforeEach} from 'vitest'
 
 import type {DocumentBase} from '../types'
 
@@ -10,52 +10,68 @@ let _singleStatesStore: Record<string, string | null> = {}
 
 // Mock nuqs with React state so re-renders happen properly
 vi.mock('nuqs', () => {
+  type QueryStatesSetter = (updates: Record<string, string | null>) => void
+  type SingleStateSetter = (value: string | null) => void
   return {
     parseAsString: {
-      withOptions: () => ({/* parser */}),
+      withOptions: () => ({
+        /* parser */
+      }),
     },
-    useQueryStates: vi.fn((_keyMap: Record<string, any>, _opts?: any) => {
-      // Use React state for reactivity
-      const [state, setStateRaw] = useState<Record<string, string | null>>(() => ({..._queryStatesStore}))
-      const setState = useCallback((updates: Record<string, string | null>) => {
-        setStateRaw((prev: Record<string, string | null>) => {
-          const next = {...prev}
-          for (const [key, value] of Object.entries(updates)) {
-            if (value === null) {
-              delete next[key]
-            } else {
-              next[key] = value
+    useQueryStates: vi.fn(
+      (
+        _keyMap: Record<string, unknown>,
+        _opts?: unknown,
+      ): [Record<string, string | null>, QueryStatesSetter] => {
+        // Use React state for reactivity
+        const [state, setStateRaw] = useState<Record<string, string | null>>(() => ({
+          ..._queryStatesStore,
+        }))
+        const setState = useCallback((updates: Record<string, string | null>) => {
+          setStateRaw((prev: Record<string, string | null>) => {
+            const next = {...prev}
+            for (const [key, value] of Object.entries(updates)) {
+              if (value === null) {
+                delete next[key]
+              } else {
+                next[key] = value
+              }
             }
-          }
-          // Also update backing store for inspection
-          Object.assign(_queryStatesStore, next)
-          // Clean nulls from backing store
-          for (const [key, value] of Object.entries(updates)) {
-            if (value === null) {
-              delete _queryStatesStore[key]
+            // Also update backing store for inspection
+            Object.assign(_queryStatesStore, next)
+            // Clean nulls from backing store
+            for (const [key, value] of Object.entries(updates)) {
+              if (value === null) {
+                delete _queryStatesStore[key]
+              }
             }
-          }
-          return next
-        })
-      }, [])
-      return [state, setState]
-    }),
-    useQueryState: vi.fn((key: string, _parser?: any) => {
-      const [state, setStateRaw] = useState<Record<string, string | null>>(() => ({..._singleStatesStore}))
+            return next
+          })
+        }, [])
+        return [state, setState]
+      },
+    ),
+    useQueryState: vi.fn((key: string, _parser?: unknown): [string | null, SingleStateSetter] => {
+      const [state, setStateRaw] = useState<Record<string, string | null>>(() => ({
+        ..._singleStatesStore,
+      }))
       const value = state[key] ?? null
-      const setValue = useCallback((newValue: string | null) => {
-        setStateRaw((prev: Record<string, string | null>) => {
-          const next = {...prev}
-          if (newValue === null) {
-            delete next[key]
-            delete _singleStatesStore[key]
-          } else {
-            next[key] = newValue
-            _singleStatesStore[key] = newValue
-          }
-          return next
-        })
-      }, [key])
+      const setValue = useCallback(
+        (newValue: string | null) => {
+          setStateRaw((prev: Record<string, string | null>) => {
+            const next = {...prev}
+            if (newValue === null) {
+              delete next[key]
+              delete _singleStatesStore[key]
+            } else {
+              next[key] = newValue
+              _singleStatesStore[key] = newValue
+            }
+            return next
+          })
+        },
+        [key],
+      )
       return [value, setValue]
     }),
     // Helper to reset state between tests
@@ -70,7 +86,7 @@ vi.mock('nuqs', () => {
 })
 
 import {useTableFilters} from '../useTableFilters'
-import type {ColumnFilterConfig, ComputedFilterConfig} from '../useTableFilters'
+import type {ComputedFilterConfig} from '../useTableFilters'
 
 // Test data types
 interface TestDoc extends DocumentBase {
@@ -83,16 +99,54 @@ interface TestDoc extends DocumentBase {
 }
 
 const testData: TestDoc[] = [
-  {_id: '1', _type: 'article', title: 'Alpha', status: 'draft', plannedPublishDate: '2026-03-25', budget: 1000},
-  {_id: '2', _type: 'article', title: 'Beta', status: 'published', plannedPublishDate: '2026-03-28', budget: 2000},
-  {_id: '3', _type: 'article', title: 'Gamma', status: 'draft', plannedPublishDate: '2026-04-01', budget: 3000},
-  {_id: '4', _type: 'article', title: 'Delta', status: 'review', plannedPublishDate: '2026-04-04', budget: 500},
-  {_id: '5', _type: 'article', title: 'Epsilon', status: 'published', plannedPublishDate: '2026-04-10', budget: 1500},
+  {
+    _id: '1',
+    _type: 'article',
+    title: 'Alpha',
+    status: 'draft',
+    plannedPublishDate: '2026-03-25',
+    budget: 1000,
+  },
+  {
+    _id: '2',
+    _type: 'article',
+    title: 'Beta',
+    status: 'published',
+    plannedPublishDate: '2026-03-28',
+    budget: 2000,
+  },
+  {
+    _id: '3',
+    _type: 'article',
+    title: 'Gamma',
+    status: 'draft',
+    plannedPublishDate: '2026-04-01',
+    budget: 3000,
+  },
+  {
+    _id: '4',
+    _type: 'article',
+    title: 'Delta',
+    status: 'review',
+    plannedPublishDate: '2026-04-04',
+    budget: 500,
+  },
+  {
+    _id: '5',
+    _type: 'article',
+    title: 'Epsilon',
+    status: 'published',
+    plannedPublishDate: '2026-04-10',
+    budget: 1500,
+  },
 ]
 
 describe('useTableFilters', () => {
   beforeEach(async () => {
-    ;(await import('nuqs') as any).__resetState()
+    const nuqsModule = (await import('nuqs')) as unknown as {
+      __resetState: () => void
+    }
+    nuqsModule.__resetState()
   })
 
   // T1-2.B1: Exact filter still works (regression)
@@ -349,7 +403,9 @@ describe('useTableFilters', () => {
     })
 
     // The filter value should be stored in the nuqs query state
-    const nuqs = await import('nuqs') as any
+    const nuqs = (await import('nuqs')) as unknown as {
+      __getQueryStates: () => Record<string, string | null>
+    }
     const queryStates = nuqs.__getQueryStates()
     expect(queryStates['filter.plannedPublishDate']).toBe('2026-03-28..2026-04-04')
   })
@@ -375,7 +431,9 @@ describe('useTableFilters', () => {
     })
 
     // The computed filter should be stored in the nuqs single state
-    const nuqs = await import('nuqs') as any
+    const nuqs = (await import('nuqs')) as unknown as {
+      __getSingleStates: () => Record<string, string | null>
+    }
     const singleStates = nuqs.__getSingleStates()
     expect(singleStates['computed']).toBe('highBudget')
   })

@@ -1,11 +1,11 @@
-import {describe, expect, it, vi, beforeEach} from 'vitest'
-import {render} from '@testing-library/react'
 import {ThemeProvider, studioTheme} from '@sanity/ui'
+import {render} from '@testing-library/react'
+import {describe, expect, it, vi, beforeEach} from 'vitest'
 
 // Mock useTableFilters to capture config
 const mockUseTableFilters = vi.fn()
 vi.mock('../useTableFilters', () => ({
-  useTableFilters: (...args: any[]) => {
+  useTableFilters: (...args: unknown[]) => {
     mockUseTableFilters(...args)
     return {
       filters: {},
@@ -17,7 +17,7 @@ vi.mock('../useTableFilters', () => ({
       setSearchInput: vi.fn(),
       hasActiveFilters: false,
       getFilterOptions: vi.fn(() => []),
-      applyFilters: vi.fn((data: any[]) => data),
+      applyFilters: vi.fn((data: unknown[]) => data),
       computedFilter: null,
       setComputedFilter: vi.fn(),
       computedFilters: undefined,
@@ -31,7 +31,7 @@ vi.mock('../useTableGrouping', () => ({
   useTableGrouping: () => ({
     groupBy: null,
     setGroupBy: vi.fn(),
-    groupData: (data: any[]) => [{key: null, label: 'All', rows: data}],
+    groupData: (data: unknown[]) => [{key: null, label: 'All', rows: data}],
   }),
 }))
 
@@ -47,7 +47,7 @@ vi.mock('../FilterBar', () => ({
 import {DocumentTable} from '../DocumentTable'
 import type {ColumnDef, DocumentBase} from '../types'
 
-function renderTable(props: any) {
+function renderTable(props: Record<string, unknown>) {
   return render(
     <ThemeProvider theme={studioTheme}>
       <DocumentTable {...props} />
@@ -64,7 +64,7 @@ describe('T1-4: DocumentTable computedFilters prop', () => {
     const computedFilters = {
       atRisk: {
         label: 'At Risk',
-        predicate: (row: DocumentBase) => !!(row as any).isAtRisk,
+        predicate: (row: DocumentBase) => !!(row as {isAtRisk?: boolean}).isAtRisk,
       },
     }
 

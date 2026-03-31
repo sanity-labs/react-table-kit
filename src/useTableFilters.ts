@@ -7,10 +7,10 @@ export interface FilterState {
   [columnId: string]: string | undefined
 }
 
-export interface ColumnFilterConfig {
+export interface ColumnFilterConfig<T extends DocumentBase = DocumentBase> {
   id: string
   filterMode: 'exact' | 'range'
-  filterFn?: (row: any, filterValue: string) => boolean
+  filterFn?: (row: T, filterValue: string) => boolean
 }
 
 export interface ComputedFilterConfig<T extends DocumentBase = DocumentBase> {
@@ -18,12 +18,12 @@ export interface ComputedFilterConfig<T extends DocumentBase = DocumentBase> {
   predicate: (row: T) => boolean
 }
 
-export interface UseTableFiltersConfig {
+export interface UseTableFiltersConfig<T extends DocumentBase = DocumentBase> {
   filterableColumns: string[]
-  columns?: ColumnFilterConfig[]
+  columns?: ColumnFilterConfig<T>[]
   searchableFields?: string[]
   searchDebounceMs?: number
-  computedFilters?: Record<string, ComputedFilterConfig>
+  computedFilters?: Record<string, ComputedFilterConfig<T>>
 }
 
 export interface UseTableFiltersResult<T extends DocumentBase> {
@@ -69,7 +69,9 @@ function applyRangeFilter(
 
   const isNumeric =
     typeof docValue === 'number' ||
-    (typeof docValue === 'string' && !isNaN(Number(docValue)) && (min == null || !isNaN(Number(min))))
+    (typeof docValue === 'string' &&
+      !isNaN(Number(docValue)) &&
+      (min == null || !isNaN(Number(min))))
 
   if (isNumeric) {
     const numValue = Number(docValue)
@@ -86,7 +88,7 @@ function applyRangeFilter(
 }
 
 export function useTableFilters<T extends DocumentBase>(
-  config: UseTableFiltersConfig,
+  config: UseTableFiltersConfig<T>,
 ): UseTableFiltersResult<T> {
   const {
     filterableColumns,
@@ -260,7 +262,14 @@ export function useTableFilters<T extends DocumentBase>(
 
       return result
     },
-    [filters, searchQuery, searchableFields, columnConfigMap, computedFilter, computedFiltersConfig],
+    [
+      filters,
+      searchQuery,
+      searchableFields,
+      columnConfigMap,
+      computedFilter,
+      computedFiltersConfig,
+    ],
   )
 
   return {

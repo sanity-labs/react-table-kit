@@ -1,4 +1,4 @@
-import {CloseIcon, SearchIcon} from '@sanity/icons'
+import {CalendarIcon, CloseIcon, SearchIcon} from '@sanity/icons'
 import {
   Button,
   Card,
@@ -7,13 +7,24 @@ import {
   Menu,
   MenuButton,
   MenuItem,
+  Popover,
   Select,
   Stack,
   Text,
   TextInput,
+  useClickOutsideEvent,
+  useGlobalKeyDown,
 } from '@sanity/ui'
 import {format} from 'date-fns'
+import type {KeyboardEvent as ReactKeyboardEvent} from 'react'
+import {useCallback, useMemo, useRef, useState} from 'react'
+import {DayPicker, type DateRange} from 'react-day-picker'
 
+import {
+  CalendarPopoverContent,
+  formatDateOnlyString,
+  parseDateOnlyString,
+} from './CalendarPopoverContent'
 import type {ColumnDef, DocumentBase} from './types'
 import {parseRangeValue} from './useTableFilters'
 import type {UseTableFiltersResult} from './useTableFilters'
@@ -203,8 +214,7 @@ export function FilterBar<T extends DocumentBase>({
             <Card data-testid="filter-chip-computed" padding={2} radius={2} tone="primary">
               <Flex align="center" gap={2}>
                 <Text size={1}>
-                  {filters.computedFilters[filters.computedFilter]?.label ??
-                    filters.computedFilter}
+                  {filters.computedFilters[filters.computedFilter]?.label ?? filters.computedFilter}
                 </Text>
                 <Button
                   data-testid="filter-chip-remove-computed"
@@ -238,7 +248,15 @@ function capitalize(str: string): string {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
 }
 
-/** Date range filter with two native date inputs */
+function isSameCalendarDay(left: Date, right: Date): boolean {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  )
+}
+
+/** Date range filter with a bounded popover calendar. */
 function DateRangeFilter({
   columnId,
   label,
@@ -250,46 +268,113 @@ function DateRangeFilter({
   value: string | undefined
   onFilterChange: (columnId: string, value: string | undefined) => void
 }) {
-  const {min, max} = value ? parseRangeValue(value) : {min: undefined, max: undefined}
+  const [open, setOpen] = useState(false)
+  const popoverRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLDivElement>(null)
 
-  const handleFromChange = (from: string) => {
-    if (!from && !max) {
-      onFilterChange(columnId, undefined)
-    } else {
-      onFilterChange(columnId, `${from || ''}..${max || ''}`)
-    }
-  }
+  const committedRange = useMemo(() => {
+    const {min, max} = value ? parseRangeValue(value) : {min: undefined, max: undefined}
+    const from = parseDateOnlyString(min)
+    const to = parseDateOnlyString(max)
+    return from || to ? {from, to} : undefined
+  }, [value])
 
-  const handleToChange = (to: string) => {
-    if (!min && !to) {
-      onFilterChange(columnId, undefined)
-    } else {
-      onFilterChange(columnId, `${min || ''}..${to || ''}`)
-    }
-  }
+  const [draftRange, setDraftRange] = useState<DateRange | undefined>(committedRange)
+
+  const closePopover = useCallback(() => {
+    setOpen(false)
+    setDraftRange(committedRange)
+  }, [committedRange])
+
+  const openPopover = useCallback(() => {
+    setDraftRange(committedRange)
+    setOpen(true)
+  }, [committedRange])
+
+  useClickOutsideEvent(open ? closePopover : undefined, () => [
+    popoverRef.current,
+    triggerRef.current,
+  ])
+
+  useGlobalKeyDown((event) => {
+    if (!open || event.key !== 'Escape') return
+    event.preventDefault()
+    event.stopPropagation()
+    closePopover()
+  })
+
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      event.stopPropagation()
+      closePopover()
+    },
+    [closePopover],
+  )
+
+  const handleSelect = useCallback(
+    (nextRange: DateRange | undefined) => {
+      if (!draftRange?.from && nextRange?.from && nextRange.to) {
+        if (isSameCalendarDay(nextRange.from, nextRange.to)) {
+          setDraftRange({from: nextRange.from, to: undefined})
+          return
+        }
+      }
+
+      setDraftRange(nextRange)
+
+      if (!nextRange?.from || !nextRange.to) return
+
+      const from = formatDateOnlyString(nextRange.from)
+      const to = formatDateOnlyString(nextRange.to)
+      onFilterChange(columnId, `${from}..${to}`)
+      setOpen(false)
+    },
+    [columnId, draftRange?.from, onFilterChange],
+  )
+
+  const triggerText =
+    committedRange?.from && committedRange.to
+      ? `${format(committedRange.from, 'dd/MM/yy')} → ${format(committedRange.to, 'dd/MM/yy')}`
+      : label
 
   return (
     <Stack space={2}>
       <Label size={1} muted>
         {label}
       </Label>
-      <Flex gap={2} align="center">
-        <input
-          type="date"
-          data-testid={`filter-range-from-${columnId}`}
-          value={min || ''}
-          onChange={(e) => handleFromChange(e.target.value)}
-        />
-        <Text size={1} muted>
-          →
-        </Text>
-        <input
-          type="date"
-          data-testid={`filter-range-to-${columnId}`}
-          value={max || ''}
-          onChange={(e) => handleToChange(e.target.value)}
-        />
-      </Flex>
+      <Popover
+        content={
+          <CalendarPopoverContent onKeyDown={handleKeyDown} popoverRef={popoverRef}>
+            <DayPicker
+              mode="range"
+              selected={draftRange}
+              onSelect={handleSelect}
+              defaultMonth={draftRange?.from ?? committedRange?.from}
+              numberOfMonths={1}
+              showOutsideDays
+            />
+          </CalendarPopoverContent>
+        }
+        open={open}
+        placement="bottom-start"
+        portal
+      >
+        <div ref={triggerRef}>
+          <Button
+            aria-label={label}
+            data-testid={`filter-range-trigger-${columnId}`}
+            fontSize={1}
+            iconRight={CalendarIcon}
+            mode={value ? 'default' : 'ghost'}
+            onClick={() => (open ? closePopover() : openPopover())}
+            padding={3}
+            text={triggerText}
+            tone={value ? 'primary' : 'default'}
+          />
+        </div>
+      </Popover>
     </Stack>
   )
 }
