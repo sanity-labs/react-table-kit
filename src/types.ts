@@ -117,6 +117,13 @@ export interface ColumnDef<T extends DocumentBase = DocumentBase> {
   sortValue?: (rawValue: unknown, row: T) => string | number
 
   /**
+   * Backend field/expression to use when server-side sorting is enabled.
+   * Lets display-oriented columns sort by a different GROQ path than their cell value.
+   * @internal
+   */
+  _serverSortField?: string
+
+  /**
    * Whether this column appears in the filter UI.
    * Defaults vary by column helper (e.g. `column.type()` defaults to `true`).
    */
