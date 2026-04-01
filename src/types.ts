@@ -93,6 +93,18 @@ export interface ColumnDef<T extends DocumentBase = DocumentBase> {
   /** Custom cell renderer. */
   cell?: (value: unknown, row: T) => ReactNode
 
+  /**
+   * Optional wrapper applied around the rendered cell content.
+   * Useful for SDK-level cell affordances that should compose with
+   * both default renderers and inline-editing cells.
+   */
+  cellDecorator?: (props: {
+    content: ReactNode
+    row: T
+    value: unknown
+    cellPadding: {x: number; y: number}
+  }) => ReactNode
+
   /** Whether this column can be sorted. */
   sortable?: boolean
 

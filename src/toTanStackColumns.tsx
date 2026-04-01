@@ -1,6 +1,6 @@
 import {Checkbox, Text} from '@sanity/ui'
 import {createColumnHelper} from '@tanstack/react-table'
-import type {ComponentType, SVGProps} from 'react'
+import type {ComponentType, ReactNode, SVGProps} from 'react'
 
 import {DatePickerCell} from './DatePickerCell'
 import {EditableCustomCell} from './EditableCustomCell'
@@ -29,6 +29,17 @@ export function toTanStackColumns<T extends DocumentBase>(
   _hasSelection: boolean,
 ) {
   const helper = createColumnHelper<T>()
+
+  const decorateCell = (
+    col: ColumnDef<T>,
+    content: ReactNode,
+    row: T,
+    value: unknown,
+    cellPadding: {x: number; y: number},
+  ) => {
+    if (!col.cellDecorator) return content
+    return col.cellDecorator({cellPadding, content, row, value})
+  }
 
   return columns.map((col) => {
     // Handle select column specially
@@ -71,6 +82,7 @@ export function toTanStackColumns<T extends DocumentBase>(
           cell: (info) => {
             const value = info.getValue()
             const row = info.row.original
+            let content: ReactNode
 
             // Editable select column — wrap in MenuButton
             if (col.edit != null && col.edit?.mode === 'select' && col.edit?.options) {
@@ -80,7 +92,7 @@ export function toTanStackColumns<T extends DocumentBase>(
                   ? (v: unknown) => DEFAULT_CELL_RENDERERS[col.id](v)
                   : (v: unknown) => <Text size={1}>{String(v ?? '')}</Text>
 
-              return (
+              content = (
                 <EditableSelectCell
                   value={value}
                   row={row}
@@ -90,6 +102,7 @@ export function toTanStackColumns<T extends DocumentBase>(
                   columnId={col.id}
                 />
               )
+              return decorateCell(col, content, row, value, {x: 16, y: 10})
             }
 
             // Editable text column — inline TextInput
@@ -100,7 +113,7 @@ export function toTanStackColumns<T extends DocumentBase>(
                   ? (v: unknown) => DEFAULT_CELL_RENDERERS[col.id](v)
                   : (v: unknown) => <Text size={1}>{String(v ?? '')}</Text>
 
-              return (
+              content = (
                 <EditableTextCell
                   value={value}
                   row={row}
@@ -109,6 +122,7 @@ export function toTanStackColumns<T extends DocumentBase>(
                   columnId={col.id}
                 />
               )
+              return decorateCell(col, content, row, value, {x: 0, y: 0})
             }
 
             // Editable date column — inline date input
@@ -125,7 +139,7 @@ export function toTanStackColumns<T extends DocumentBase>(
                     return <Text size={1}>{String(v)}</Text>
                   }
 
-              return (
+              content = (
                 <DatePickerCell
                   value={value}
                   row={row}
@@ -135,6 +149,7 @@ export function toTanStackColumns<T extends DocumentBase>(
                   toneByDateRange={col.edit?._toneByDateRange}
                 />
               )
+              return decorateCell(col, content, row, value, {x: 16, y: 10})
             }
 
             // Editable custom column — developer-provided editor
@@ -145,7 +160,7 @@ export function toTanStackColumns<T extends DocumentBase>(
                   ? (v: unknown) => DEFAULT_CELL_RENDERERS[col.id](v)
                   : (v: unknown) => <Text size={1}>{String(v ?? '')}</Text>
 
-              return (
+              content = (
                 <EditableCustomCell
                   value={value}
                   row={row}
@@ -155,14 +170,22 @@ export function toTanStackColumns<T extends DocumentBase>(
                   editComponent={col.edit?.component}
                 />
               )
+              return decorateCell(col, content, row, value, {x: 16, y: 10})
             }
 
-            if (col.cell) return col.cell(value, row)
+            if (col.cell) {
+              content = col.cell(value, row)
+              return decorateCell(col, content, row, value, {x: 16, y: 10})
+            }
             // Use built-in renderer if available for this column type
             const defaultRenderer = DEFAULT_CELL_RENDERERS[col.id]
-            if (defaultRenderer) return defaultRenderer(value)
+            if (defaultRenderer) {
+              content = defaultRenderer(value)
+              return decorateCell(col, content, row, value, {x: 16, y: 10})
+            }
             // Fallback: plain text
-            return <Text size={1}>{String(value ?? '')}</Text>
+            content = <Text size={1}>{String(value ?? '')}</Text>
+            return decorateCell(col, content, row, value, {x: 16, y: 10})
           },
           enableSorting: col.sortable !== false,
           ...(col.sortValue && {
@@ -195,7 +218,14 @@ export function toTanStackColumns<T extends DocumentBase>(
     return helper.display({
       id: col.id,
       header: col.header,
-      cell: col.cell ? (info) => col.cell!(undefined, info.row.original) : () => null,
+      cell: col.cell
+        ? (info) => {
+            const row = info.row.original
+            const value = undefined
+            const content = col.cell!(value, row)
+            return decorateCell(col, content, row, value, {x: 16, y: 10})
+          }
+        : () => null,
       enableSorting: false,
       size: col.width,
       minSize: col.width ?? 80,
