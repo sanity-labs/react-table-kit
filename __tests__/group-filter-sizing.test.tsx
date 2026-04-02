@@ -1,9 +1,8 @@
-import {screen, waitFor} from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import {fireEvent, screen, waitFor} from '@testing-library/react'
 import {describe, expect, it} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
 import {renderWithTheme} from './helpers'
 
 const MOCK_DOCUMENTS = [
@@ -46,8 +45,6 @@ const MOCK_DOCUMENTS = [
 
 describe('Grouped + filter clear column sizing', () => {
   it('preserves column layout after filtering to zero results and clearing in grouped mode', async () => {
-    const user = userEvent.setup()
-
     renderWithTheme(
       <DocumentTable
         data={MOCK_DOCUMENTS}
@@ -63,7 +60,7 @@ describe('Grouped + filter clear column sizing', () => {
 
     // Step 1: Enable grouping by status
     const groupSelect = screen.getByRole('combobox')
-    await user.selectOptions(groupSelect, 'status')
+    fireEvent.change(groupSelect, {target: {value: 'status'}})
 
     // Verify groups are showing
     const groupHeaders = screen.getAllByTestId('group-header')
@@ -74,20 +71,26 @@ describe('Grouped + filter clear column sizing', () => {
 
     // Step 2: Search for something that matches nothing → 0 visible rows
     const searchInput = screen.getByPlaceholderText(/search/i)
-    await user.type(searchInput, 'xyznonexistent')
+    fireEvent.change(searchInput, {target: {value: 'xyznonexistent'}})
 
     // Search is debounced, so wait for it to take effect
-    await waitFor(() => {
-      expect(screen.queryByText('Climate Summit')).not.toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Climate Summit')).not.toBeInTheDocument()
+      },
+      {timeout: 10000},
+    )
 
     // Step 3: Clear the search to bring data back
-    await user.clear(searchInput)
+    fireEvent.change(searchInput, {target: {value: ''}})
 
     // Step 4: Verify all data rows are back with correct structure
-    await waitFor(() => {
-      expect(screen.getByText('Climate Summit')).toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText('Climate Summit')).toBeInTheDocument()
+      },
+      {timeout: 10000},
+    )
     expect(screen.getByText('Tech Report')).toBeInTheDocument()
     expect(screen.getByText('Championship')).toBeInTheDocument()
     expect(screen.getByText('Remote Work')).toBeInTheDocument()

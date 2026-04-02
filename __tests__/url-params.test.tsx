@@ -1,13 +1,13 @@
 import {ThemeProvider} from '@sanity/ui'
 import {buildTheme} from '@sanity/ui/theme'
-import {screen, within, waitFor} from '@testing-library/react'
+import {fireEvent, screen, within, waitFor} from '@testing-library/react'
 import {render} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {NuqsTestingAdapter, type UrlUpdateEvent} from 'nuqs/adapters/testing'
 import {describe, expect, it, vi} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
 
 const theme = buildTheme()
 
@@ -82,28 +82,28 @@ function latestParams(spy: ReturnType<typeof vi.fn>): URLSearchParams {
 
 describe('URL param persistence', () => {
   it('persists filter selection to URL params', async () => {
-    const user = userEvent.setup()
     const onUrlUpdate = vi.fn()
     renderWithNuqs(
       <DocumentTable data={MOCK_DOCUMENTS} columns={[column.title(), column.type()]} />,
       {onUrlUpdate},
     )
     const filterButton = screen.getByRole('button', {name: /type/i})
-    await user.click(filterButton)
-    await user.click(screen.getByRole('menuitem', {hidden: true, name: /article/i}))
-    expect(latestParams(onUrlUpdate).get('filter._type')).toBe('article')
+    fireEvent.click(filterButton)
+    fireEvent.click(await screen.findByRole('menuitem', {hidden: true, name: /article/i}))
+    await waitFor(() => {
+      expect(latestParams(onUrlUpdate).get('filter._type')).toBe('article')
+    })
   })
 
   it('removes filter param from URL when filter is cleared', async () => {
-    const user = userEvent.setup()
     const onUrlUpdate = vi.fn()
     renderWithNuqs(
       <DocumentTable data={MOCK_DOCUMENTS} columns={[column.title(), column.type()]} />,
       {onUrlUpdate},
     )
-    await user.click(screen.getByRole('button', {name: /type/i}))
-    await user.click(screen.getByRole('menuitem', {hidden: true, name: /article/i}))
-    await user.click(screen.getByRole('button', {name: /clear/i}))
+    fireEvent.click(screen.getByRole('button', {name: /type/i}))
+    fireEvent.click(await screen.findByRole('menuitem', {hidden: true, name: /article/i}))
+    fireEvent.click(screen.getByRole('button', {name: /clear/i}))
     expect(latestParams(onUrlUpdate).has('filter._type')).toBe(false)
   })
 

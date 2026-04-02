@@ -1,10 +1,10 @@
-import {screen} from '@testing-library/react'
+import {fireEvent, screen, within} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {describe, it, expect, vi} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
-import type {DocumentBase} from '../src/types'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
+import type {DocumentBase} from '../src/types/tableTypes'
 import {renderWithTheme} from './helpers'
 
 const mockData: DocumentBase[] = [
@@ -13,10 +13,19 @@ const mockData: DocumentBase[] = [
   {_id: '3', _type: 'article', title: 'Third', dueDate: null},
 ]
 
+async function openCalendar(button: HTMLButtonElement) {
+  fireEvent.click(button)
+  return screen.findByRole('grid', {hidden: true, name: /march 2026/i})
+}
+
+function getCalendarDayButton(grid: HTMLElement, day: string) {
+  return within(grid)
+    .getAllByRole('button', {hidden: true})
+    .find((button) => button.getAttribute('aria-label')?.includes(`March ${day}`))
+}
+
 describe('Date Edit Mode', () => {
   it('Behavior 1 (tracer): click calendar button opens date picker popover', async () => {
-    const user = userEvent.setup()
-
     renderWithTheme(
       <DocumentTable
         data={mockData}
@@ -40,10 +49,7 @@ describe('Date Edit Mode', () => {
 
     // Click the calendar button to open the picker
     const button = dateCell.querySelector('button')!
-    await user.click(button)
-
-    // Should show a calendar grid (react-day-picker renders role="grid")
-    expect(screen.getByRole('grid')).toBeInTheDocument()
+    expect(await openCalendar(button)).toBeInTheDocument()
   })
 
   it('Behavior 2: selecting a date fires onSave with formatted date string', async () => {
@@ -65,12 +71,11 @@ describe('Date Edit Mode', () => {
     const dateCell = firstRow.querySelectorAll('[role=cell]')[0]
     const button = dateCell.querySelector('button')!
 
-    await user.click(button)
+    const grid = await openCalendar(button)
+    const dayButton = getCalendarDayButton(grid, '20')
 
-    // Calendar should be open — find a day button to click
-    // The calendar shows March 2026 (current value is 2026-03-15)
-    // Click day 20
-    const dayButton = screen.getByRole('button', {name: /Friday, March 20th, 2026/i})
+    expect(dayButton).toBeTruthy()
+    if (!dayButton) throw new Error('Expected March day button 20 to be present')
     await user.click(dayButton)
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({_id: '1'}), '2026-03-20')
@@ -94,10 +99,7 @@ describe('Date Edit Mode', () => {
     const firstRow = tbody.querySelectorAll('[role=row]')[0]
     const button = firstRow.querySelectorAll('[role=cell]')[0].querySelector('button')!
 
-    await user.click(button)
-
-    // Calendar should be open
-    expect(screen.getByRole('grid')).toBeInTheDocument()
+    expect(await openCalendar(button)).toBeInTheDocument()
 
     // Press Escape
     await user.keyboard('{Escape}')
@@ -151,10 +153,11 @@ describe('Date Edit Mode', () => {
     const dateCell = firstRow.querySelectorAll('[role=cell]')[0]
     const button = dateCell.querySelector('button')!
 
-    await user.click(button)
+    const grid = await openCalendar(button)
+    const dayButton = getCalendarDayButton(grid, '20')
 
-    // Select a new date
-    const dayButton = screen.getByRole('button', {name: /Friday, March 20th, 2026/i})
+    expect(dayButton).toBeTruthy()
+    if (!dayButton) throw new Error('Expected March day button 20 to be present')
     await user.click(dayButton)
 
     // Cell should show the new date optimistically

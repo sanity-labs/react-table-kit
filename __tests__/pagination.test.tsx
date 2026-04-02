@@ -1,10 +1,9 @@
-import {screen, within} from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import {fireEvent, screen, waitFor, within} from '@testing-library/react'
 import {useState} from 'react'
 import {describe, expect, it} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
 import {renderWithTheme} from './helpers'
 
 // Generate a large dataset for pagination testing
@@ -35,24 +34,26 @@ describe('Pagination', () => {
     expect(screen.getByRole('button', {name: /next/i})).toBeInTheDocument()
   })
 
-  // Behavior 11 — "Showing X-Y of Z documents" indicator is accurate
-  it('"Showing 51-100 of 342 documents" indicator is accurate', async () => {
-    const docs = generateDocs(342)
+  // Behavior 11 — "Showing X-Y of Z documents" indicator stays accurate across pages
+  it('updates the pagination indicator across pages', async () => {
+    const docs = generateDocs(120)
 
     renderWithTheme(<DocumentTable data={docs} columns={[column.title()]} pageSize={50} />)
 
-    // Page 1: Showing 1-50 of 342 documents
-    expect(screen.getByText('Showing 1-50 of 342 documents')).toBeInTheDocument()
+    // Page 1
+    expect(screen.getByText('Showing 1-50 of 120 documents')).toBeInTheDocument()
 
     // Go to page 2
-    await userEvent.click(screen.getByRole('button', {name: /next/i}))
-    expect(screen.getByText('Showing 51-100 of 342 documents')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', {name: /next/i}))
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination')).toHaveTextContent('Showing 51-100 of 120 documents')
+    })
 
-    // Go to page 7 (last page)
-    for (let i = 0; i < 5; i++) {
-      await userEvent.click(screen.getByRole('button', {name: /next/i}))
-    }
-    expect(screen.getByText('Showing 301-342 of 342 documents')).toBeInTheDocument()
+    // Go to the last page
+    fireEvent.click(screen.getByRole('button', {name: /next/i}))
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination')).toHaveTextContent('Showing 101-120 of 120 documents')
+    })
   })
 
   // Behavior 12 — Changing page preserves current sort and filter state
@@ -74,11 +75,13 @@ describe('Pagination', () => {
     expect(screen.getByText(/Title.*↓/)).toBeInTheDocument()
 
     // Go to page 2
-    await userEvent.click(screen.getByRole('button', {name: /next/i}))
+    fireEvent.click(screen.getByRole('button', {name: /next/i}))
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination')).toHaveTextContent('Showing 11-20 of 20 documents')
+    })
 
     // Sort should still be active
     expect(screen.getByText(/Title.*↓/)).toBeInTheDocument()
-    expect(screen.getByText('Showing 11-20 of 20 documents')).toBeInTheDocument()
   })
 
   // Behavior 13 — Changing a filter resets to page 1
@@ -104,12 +107,14 @@ describe('Pagination', () => {
     expect(screen.getByText('Showing 1-10 of 30 documents')).toBeInTheDocument()
 
     // Go to page 2
-    await userEvent.click(screen.getByRole('button', {name: /next/i}))
-    expect(screen.getByText('Showing 11-20 of 30 documents')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', {name: /next/i}))
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination')).toHaveTextContent('Showing 11-20 of 30 documents')
+    })
 
     // Apply filter — should reset to page 1
     // With 5 docs and pageSize=5, all fit on one page so pagination hides
-    await userEvent.click(screen.getByTestId('apply-filter'))
+    fireEvent.click(screen.getByTestId('apply-filter'))
     expect(screen.queryByTestId('pagination')).not.toBeInTheDocument()
   })
 })

@@ -2,8 +2,8 @@ import {screen, within, fireEvent, waitFor} from '@testing-library/react'
 import React from 'react'
 import {describe, it, expect, vi} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
 import {renderWithTheme} from './helpers'
 
 // Use dates far from "now" (March 5, 2026) for predictable formatting

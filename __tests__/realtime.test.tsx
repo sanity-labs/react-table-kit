@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event'
 import {useState} from 'react'
 import {describe, expect, it, vi} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
-import {useStableDocuments} from '../src/useStableDocuments'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
+import {useStableDocuments} from '../src/hooks/useStableDocuments'
 import {renderWithTheme} from './helpers'
 
 const MOCK_DOCUMENTS = [

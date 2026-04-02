@@ -1,9 +1,9 @@
-import {screen, within, waitFor} from '@testing-library/react'
+import {fireEvent, screen, within, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {describe, expect, it, vi} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
 import {renderWithTheme} from './helpers'
 
 const MOCK_DOCUMENTS = [
@@ -54,11 +54,13 @@ describe('Filtering', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(6)
 
     const filterButton = screen.getByRole('button', {name: /type/i})
-    await userEvent.click(filterButton)
-    const articleOption = screen.getByRole('menuitem', {hidden: true, name: /article/i})
-    await userEvent.click(articleOption)
+    fireEvent.click(filterButton)
+    const articleOption = await screen.findByRole('menuitem', {hidden: true, name: /article/i})
+    fireEvent.click(articleOption)
 
-    expect(within(table).getAllByRole('row')).toHaveLength(4)
+    await waitFor(() => {
+      expect(within(table).getAllByRole('row')).toHaveLength(4)
+    })
     expect(screen.getByText('Climate Summit Agreement')).toBeInTheDocument()
     expect(screen.getByText('Championship Thriller')).toBeInTheDocument()
     expect(screen.getByText('Mediterranean Diet Study')).toBeInTheDocument()
@@ -72,9 +74,11 @@ describe('Filtering', () => {
     )
 
     const filterButton = screen.getByRole('button', {name: /type/i})
-    await userEvent.click(filterButton)
+    fireEvent.click(filterButton)
 
-    expect(screen.getByRole('menuitem', {hidden: true, name: /article/i})).toBeInTheDocument()
+    expect(
+      await screen.findByRole('menuitem', {hidden: true, name: /article/i}),
+    ).toBeInTheDocument()
     expect(screen.getByRole('menuitem', {hidden: true, name: /product/i})).toBeInTheDocument()
     expect(screen.getByRole('menuitem', {hidden: true, name: /opinion/i})).toBeInTheDocument()
   })
@@ -92,17 +96,21 @@ describe('Filtering', () => {
     )
 
     const typeFilter = screen.getByRole('button', {name: /type/i})
-    await userEvent.click(typeFilter)
-    await userEvent.click(screen.getByRole('menuitem', {hidden: true, name: /article/i}))
+    fireEvent.click(typeFilter)
+    fireEvent.click(await screen.findByRole('menuitem', {hidden: true, name: /article/i}))
 
     const table = screen.getByRole('table')
-    expect(within(table).getAllByRole('row')).toHaveLength(4)
+    await waitFor(() => {
+      expect(within(table).getAllByRole('row')).toHaveLength(4)
+    })
 
     const statusFilter = screen.getByRole('button', {name: /status/i})
-    await userEvent.click(statusFilter)
-    await userEvent.click(screen.getByRole('menuitem', {hidden: true, name: /published/i}))
+    fireEvent.click(statusFilter)
+    fireEvent.click(await screen.findByRole('menuitem', {hidden: true, name: /published/i}))
 
-    expect(within(table).getAllByRole('row')).toHaveLength(3)
+    await waitFor(() => {
+      expect(within(table).getAllByRole('row')).toHaveLength(3)
+    })
     expect(screen.getByText('Climate Summit Agreement')).toBeInTheDocument()
     expect(screen.getByText('Championship Thriller')).toBeInTheDocument()
   })

@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest'
 
-import {column} from '../src/columns'
+import {column} from '../src/helpers/table/columns'
 
 /**
  * Built-in column helpers — opinionated edit modes.

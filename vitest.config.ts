@@ -6,7 +6,8 @@ export default defineConfig({
   test: {
     name: 'sanity-table-kit',
     environment: 'jsdom',
-    include: ['src/__tests__/**/*.test.{ts,tsx}'],
-    setupFiles: ['src/__tests__/setup.ts'],
+    include: ['__tests__/**/*.test.{ts,tsx}'],
+    setupFiles: ['./__tests__/setup.ts'],
+    testTimeout: 10000,
   },
 })

@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {column} from '../src/columns'
+import {column} from '../src/helpers/table/columns'
 
 /**
  * Width prop on column helpers.

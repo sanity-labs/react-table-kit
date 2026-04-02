@@ -2,9 +2,9 @@ import {screen} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {describe, it, expect, vi} from 'vitest'
 
-import {column} from '../src/columns'
-import {DocumentTable} from '../src/DocumentTable'
-import type {DocumentBase} from '../src/types'
+import {DocumentTable} from '../src/components/table/DocumentTable'
+import {column} from '../src/helpers/table/columns'
+import type {DocumentBase} from '../src/types/tableTypes'
 import {renderWithTheme} from './helpers'
 
 const mockData: DocumentBase[] = [

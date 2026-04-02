@@ -1,7 +1,7 @@
-export {DocumentTable} from './DocumentTable'
-export {useDocumentTable} from './useDocumentTable'
-export {useTableFilters} from './useTableFilters'
-export {FilterBar} from './FilterBar'
+export {DocumentTable} from './components/table/DocumentTable'
+export {useDocumentTable} from './hooks/useDocumentTable'
+export {useTableFilters} from './hooks/useTableFilters'
+export {FilterBar} from './components/filters/FilterBar'
 export {
   deserializeFilterValue,
   filter,
@@ -11,26 +11,26 @@ export {
   isFilterActiveValue,
   mapFilterValuesToInitialValues,
   serializeFilterValue,
-} from './filters'
+} from './helpers/filters/filters'
 export {
   CalendarPopoverContent,
   formatDateOnlyString,
   parseDateOnlyString,
-} from './CalendarPopoverContent'
-export {column} from './columns'
-export {BadgeCell} from './BadgeCell'
-export {ToggleSwitch} from './ToggleSwitch'
-export type {BadgeCellProps, BadgeColorMap, BadgeColorMapEntry} from './BadgeCell'
-export {useTableGrouping} from './useTableGrouping'
-export {BulkActionBar} from './BulkActionBar'
-export {SelectAllBanner} from './SelectAllBanner'
-export {Pagination} from './Pagination'
-export {useTableSelection} from './useTableSelection'
-export {useStableDocuments} from './useStableDocuments'
-export {usePagination} from './usePagination'
-export {useOptimisticValue} from './useOptimisticValue'
-export {useFilterUrlState} from './useFilterUrlState'
-export {useFilterPresets} from './useFilterPresets'
+} from './components/filters/CalendarPopoverContent'
+export {column} from './helpers/table/columns'
+export {BadgeCell} from './components/cells/BadgeCell'
+export {ToggleSwitch} from './components/filters/ToggleSwitch'
+export type {BadgeCellProps, BadgeColorMap, BadgeColorMapEntry} from './components/cells/BadgeCell'
+export {useTableGrouping} from './hooks/useTableGrouping'
+export {BulkActionBar} from './components/table/BulkActionBar'
+export {SelectAllBanner} from './components/table/SelectAllBanner'
+export {Pagination} from './components/table/Pagination'
+export {useTableSelection} from './hooks/useTableSelection'
+export {useStableDocuments} from './hooks/useStableDocuments'
+export {usePagination} from './hooks/usePagination'
+export {useOptimisticValue} from './hooks/useOptimisticValue'
+export {useFilterUrlState} from './hooks/useFilterUrlState'
+export {useFilterPresets} from './hooks/useFilterPresets'
 export type {
   ColumnDef,
   DocumentBase,
@@ -38,20 +38,20 @@ export type {
   SortConfig,
   SelectionConfig,
   EditOption,
-} from './types'
+} from './types/tableTypes'
 export type {
   DocumentTableInstance,
   DocumentHeaderGroup,
   DocumentHeader,
   DocumentRow,
   DocumentCell,
-} from './useDocumentTable'
+} from './hooks/useDocumentTable'
 export type {
   FilterState,
   UseTableFiltersResult,
   ColumnFilterConfig,
   ComputedFilterConfig,
-} from './useTableFilters'
+} from './hooks/useTableFilters'
 export type {
   BaseFilterOptions,
   BaseFilterDef,
@@ -84,8 +84,8 @@ export type {
   SearchFilterOptions,
   StringFilterDef,
   StringFilterOptions,
-} from './filters'
-export type {GroupedData, UseTableGroupingResult} from './useTableGrouping'
-export type {TableSelection, SelectionState} from './useTableSelection'
-export type {PaginationState} from './usePagination'
-export type {UseFilterUrlStateResult} from './useFilterUrlState'
+} from './helpers/filters/filters'
+export type {GroupedData, UseTableGroupingResult} from './hooks/useTableGrouping'
+export type {TableSelection, SelectionState} from './hooks/useTableSelection'
+export type {PaginationState} from './hooks/usePagination'
+export type {UseFilterUrlStateResult} from './hooks/useFilterUrlState'
