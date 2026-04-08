@@ -19,6 +19,12 @@ export {
 } from './components/filters/CalendarPopoverContent'
 export {column} from './helpers/table/columns'
 export {BadgeCell} from './components/cells/BadgeCell'
+export {TableCellChrome} from './components/cells/TableCellChrome'
+export type {
+  TableCellChromeBorderMode,
+  TableCellChromeProps,
+  TableCellChromeState,
+} from './components/cells/TableCellChrome'
 export {ToggleSwitch} from './components/filters/ToggleSwitch'
 export type {BadgeCellProps, BadgeColorMap, BadgeColorMapEntry} from './components/cells/BadgeCell'
 export {useTableGrouping} from './hooks/useTableGrouping'

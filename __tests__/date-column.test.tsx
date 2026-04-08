@@ -118,7 +118,7 @@ describe('column.date() — display formatting', () => {
     expect(dateCell.style.color).not.toBe('var(--card-badge-critical-fg-color, #e03e2f)')
   })
 
-  it('Behavior 6: shows em dash for null/empty values', () => {
+  it('Behavior 6: shows + Add... empty state for null/empty values', () => {
     renderWithTheme(
       <DocumentTable
         data={[mockData[2], mockData[3]]}
@@ -127,8 +127,28 @@ describe('column.date() — display formatting', () => {
     )
 
     const table = screen.getByRole('table')
-    const dashes = within(table).getAllByText('—')
-    expect(dashes.length).toBe(2)
+    const emptyStates = within(table).getAllByTestId('date-empty-state')
+    expect(emptyStates.length).toBe(2)
+    emptyStates.forEach((state) => {
+      expect(state).toHaveAttribute('data-state', 'empty')
+      expect(state).toHaveAttribute('data-border', 'false')
+    })
+    expect(within(table).getAllByText('Add...')).toHaveLength(2)
+  })
+
+  it('Behavior 6.1: wraps non-empty date values in shared table chrome', () => {
+    renderWithTheme(
+      <DocumentTable
+        data={[mockData[0]]}
+        columns={[column.title(), column.date({field: 'dueDate', header: 'Due Date'})]}
+      />,
+    )
+
+    const table = screen.getByRole('table')
+    const filledShell = within(table).getByTestId('date-cell-shell')
+    expect(filledShell).toBeInTheDocument()
+    expect(filledShell).toHaveAttribute('data-state', 'filled')
+    expect(filledShell).toHaveAttribute('data-border', 'true')
   })
 })
 

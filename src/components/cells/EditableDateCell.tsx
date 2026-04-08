@@ -91,7 +91,7 @@ export function EditableDateCell<T extends DocumentBase>({
       }}
       onClick={handleOpen}
     >
-      {cellRenderer(displayValue, row)}
+      {_cellRenderer(displayValue, row)}
     </button>
   )
 }

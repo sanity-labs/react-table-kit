@@ -1,5 +1,4 @@
-import {CalendarIcon} from '@sanity/icons'
-import {Button, Popover, useClickOutsideEvent, useGlobalKeyDown} from '@sanity/ui'
+import {Popover, useClickOutsideEvent, useGlobalKeyDown} from '@sanity/ui'
 import React, {useState, useCallback} from 'react'
 import {DayPicker} from 'react-day-picker'
 
@@ -10,6 +9,7 @@ import {
   formatDateOnlyString,
   parseDateOnlyString,
 } from '../filters/CalendarPopoverContent'
+import {DateCellShell, DateEmptyState} from './DateCellChrome'
 
 /**
  * DatePickerCell — renders a date cell that opens a calendar popover for editing.
@@ -66,6 +66,8 @@ export function DatePickerCell<T extends DocumentBase>({
   })
 
   const selectedDate = parseDateOnlyString(String(displayValue ?? '') || undefined)
+  const rawDisplayValue = String(displayValue ?? '').trim()
+  const isEmptyValue = rawDisplayValue.length === 0
 
   const buttonTone = (() => {
     if (!toneByDateRange) return 'default'
@@ -96,20 +98,14 @@ export function DatePickerCell<T extends DocumentBase>({
       placement="bottom-start"
       portal
     >
-      <div ref={triggerRef}>
-        <Button
-          className="w-full"
-          mode="ghost"
-          onClick={() => setOpen((current) => !current)}
-          padding={2}
-          paddingLeft={4}
-          tone={buttonTone}
-        >
-          <div className="flex items-center justify-between gap-2">
-            {cellRenderer(displayValue, row)}
-            <CalendarIcon className="text-3xl" />
-          </div>
-        </Button>
+      <div ref={triggerRef} style={{minWidth: 0, width: '100%'}}>
+        {isEmptyValue ? (
+          <DateEmptyState onClick={() => setOpen((current) => !current)} />
+        ) : (
+          <DateCellShell onClick={() => setOpen((current) => !current)}>
+            <span data-date-tone={buttonTone}>{cellRenderer(displayValue, row)}</span>
+          </DateCellShell>
+        )}
       </div>
     </Popover>
   )

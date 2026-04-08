@@ -1,7 +1,8 @@
-import {Badge, Button, Text} from '@sanity/ui'
+import {Badge, Text} from '@sanity/ui'
 import {format, isPast} from 'date-fns'
 import React, {type ReactNode} from 'react'
 
+import {DateCellShell, DateEmptyState} from '../../components/cells/DateCellChrome'
 import {ToggleSwitch} from '../../components/filters/ToggleSwitch'
 import type {ColumnDef, ColumnEditConfig, DocumentBase, EditOption} from '../../types/tableTypes'
 
@@ -554,59 +555,72 @@ export const column = {
       ...(icon && {icon}),
       sortable: sortable ?? true,
       cell: (value: unknown) => {
-        if (!value)
-          return (
-            <Text size={1} muted>
-              —
+        const raw = String(value ?? '').trim()
+        const isEmptyValue = raw.length === 0
+        const hasEditConfig = edit != null
+
+        if (isEmptyValue) {
+          return hasEditConfig ? (
+            <Text muted size={1}>
+              Add...
             </Text>
+          ) : (
+            <DateEmptyState />
           )
-        const dateStr = String(value)
+        }
+
         // Parse date-only strings as local time, not UTC.
         // new Date('2026-03-11') creates midnight UTC, which in negative UTC offsets
         // becomes the previous day locally. Manual parsing avoids this.
-        const dateMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/)
+        const dateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
         const date = dateMatch
           ? new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]))
-          : new Date(dateStr)
-        if (isNaN(date.getTime()))
-          return (
+          : new Date(raw)
+
+        let inlineContent: React.ReactNode
+
+        if (isNaN(date.getTime())) {
+          inlineContent = (
             <Text size={1} muted>
               —
             </Text>
           )
+        } else {
+          const displayText = format(date, 'dd/MM/yy')
+          const dateTone = getDateRangeTone(date, toneByDateRange ?? false)
 
-        const displayText = format(date, 'dd/MM/yy')
-        const dateTone = getDateRangeTone(date, toneByDateRange ?? false)
-
-        // Overdue highlighting
-        if (showOverdue && isPast(date)) {
-          return (
-            <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-              <span
-                style={{color: 'var(--card-badge-critical-fg-color, #e03e2f)', fontSize: 'inherit'}}
-              >
-                {displayText}
+          if (showOverdue && isPast(date)) {
+            inlineContent = (
+              <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                <span
+                  style={{
+                    color: 'var(--card-badge-critical-fg-color, #e03e2f)',
+                    fontSize: 'inherit',
+                  }}
+                >
+                  {displayText}
+                </span>
+                <Badge fontSize={0} tone="critical">
+                  Overdue
+                </Badge>
               </span>
-              <Badge fontSize={0} tone="critical">
-                Overdue
+            )
+          } else if (toneByDateRange) {
+            inlineContent = (
+              <Badge fontSize={1} padding={1} tone={dateTone}>
+                {displayText}
               </Badge>
-            </span>
-          )
+            )
+          } else {
+            inlineContent = <Text size={1}>{displayText}</Text>
+          }
         }
 
-        if (toneByDateRange) {
-          return (
-            <Button
-              tone={dateTone}
-              mode="ghost"
-              padding={2}
-              text={displayText}
-              style={{cursor: 'default'}}
-            />
-          )
+        if (hasEditConfig) {
+          return inlineContent
         }
 
-        return <Text size={1}>{displayText}</Text>
+        return <DateCellShell>{inlineContent}</DateCellShell>
       },
       ...(filterable != null && {filterable}),
       ...(filterable && {filterMode: config.filterMode ?? 'range'}),
