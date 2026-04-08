@@ -426,13 +426,15 @@ describe('Badge-as-button + Optimistic Updates', () => {
     // Edit first row: draft → published
     const button1 = rows[0].querySelectorAll('[role=cell]')[1].querySelector('button')!
     await user.click(button1)
-    const pub1 = screen.getByRole('menuitem', {name: /published/i, hidden: true})
+    const pub1 = screen.getAllByRole('menuitem', {name: /published/i, hidden: true}).at(-1)
+    if (!pub1) throw new Error('Expected a Published menu item')
     await user.click(pub1)
 
     // Edit second row: published → draft
     const button2 = rows[1].querySelectorAll('[role=cell]')[1].querySelector('button')!
     await user.click(button2)
-    const draft2 = screen.getByRole('menuitem', {name: /^draft$/i, hidden: true})
+    const draft2 = screen.getAllByRole('menuitem', {name: /^draft$/i, hidden: true}).at(-1)
+    if (!draft2) throw new Error('Expected a Draft menu item')
     await user.click(draft2)
 
     // Both should show optimistic values

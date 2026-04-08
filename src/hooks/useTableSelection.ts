@@ -3,7 +3,7 @@ import {useCallback, useMemo} from 'react'
 import type {DocumentBase} from '../types/tableTypes'
 
 export interface SelectionState {
-  /** Map of row index to boolean */
+  /** Map of row id to boolean */
   [key: string]: boolean
 }
 
@@ -16,10 +16,14 @@ export interface TableSelection<T extends DocumentBase = DocumentBase> {
   clearSelection: () => void
   /** Whether all rows are selected */
   isAllSelected: boolean
-  /** Toggle a single row by index */
-  toggleRow: (rowIndex: string) => void
+  /** Toggle a single row by id */
+  toggleRow: (rowId: string) => void
   /** Toggle all rows */
   toggleAll: () => void
+}
+
+function normalizeRowId(id: string) {
+  return id.replace(/^drafts\./, '')
 }
 
 export function useTableSelection<T extends DocumentBase>(
@@ -28,13 +32,20 @@ export function useTableSelection<T extends DocumentBase>(
   data: T[],
 ): TableSelection<T> {
   const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length
+  const rowsById = useMemo(() => {
+    const map = new Map<string, T>()
+    data.forEach((row) => {
+      map.set(normalizeRowId(row._id), row)
+    })
+    return map
+  }, [data])
 
   const selectedRows = useMemo(() => {
     return Object.keys(rowSelection)
       .filter((k) => rowSelection[k])
-      .map((k) => data[parseInt(k, 10)])
+      .map((k) => rowsById.get(k) ?? data[parseInt(k, 10)])
       .filter(Boolean)
-  }, [rowSelection, data])
+  }, [rowSelection, rowsById, data])
 
   const isAllSelected = data.length > 0 && selectedCount === data.length
 
@@ -43,11 +54,11 @@ export function useTableSelection<T extends DocumentBase>(
   }, [setRowSelection])
 
   const toggleRow = useCallback(
-    (rowIndex: string) => {
+    (rowId: string) => {
       setRowSelection((prev: SelectionState) => {
         const next = {...prev}
-        next[rowIndex] = !next[rowIndex]
-        if (!next[rowIndex]) delete next[rowIndex]
+        next[rowId] = !next[rowId]
+        if (!next[rowId]) delete next[rowId]
         return next
       })
     },
@@ -59,8 +70,8 @@ export function useTableSelection<T extends DocumentBase>(
       setRowSelection({})
     } else {
       const next: SelectionState = {}
-      data.forEach((_, i) => {
-        next[String(i)] = true
+      data.forEach((row, i) => {
+        next[normalizeRowId(row._id) || String(i)] = true
       })
       setRowSelection(next)
     }
