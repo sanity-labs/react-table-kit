@@ -57,7 +57,7 @@ export function DocumentTable<T extends DocumentBase>({
         .filter((c) => c.filterable || c.filterFn || c.filterMode)
         .map((c) => ({
           id: c.field ?? c.id,
-          filterMode: (c.filterMode ?? 'exact') as const,
+          filterMode: c.filterMode ?? 'exact',
           ...(c.filterFn && {filterFn: c.filterFn}),
         })),
     [columns],

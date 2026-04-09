@@ -100,7 +100,7 @@ export function useTableFilters<T extends DocumentBase>(
 
   // Build a lookup map from column configs for O(1) access
   const columnConfigMap = useMemo(() => {
-    const map = new Map<string, ColumnFilterConfig>()
+    const map = new Map<string, ColumnFilterConfig<T>>()
     if (columnConfigs) {
       for (const col of columnConfigs) {
         map.set(col.id, col)

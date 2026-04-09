@@ -127,8 +127,8 @@ describe('Date Edit Mode', () => {
     const thirdRow = tbody.querySelectorAll('[role=row]')[2]
     const dateCell = thirdRow.querySelectorAll('[role=cell]')[0]
 
-    // Should show a placeholder
-    expect(dateCell.textContent).toContain('—')
+    // Editable empty dates use the click-to-add empty state
+    expect(dateCell.textContent).toContain('Add...')
 
     // Should still have a clickable calendar button
     expect(dateCell.querySelector('button')).toBeTruthy()
