@@ -95,3 +95,40 @@ export type {GroupedData, UseTableGroupingResult} from './hooks/useTableGrouping
 export type {TableSelection, SelectionState} from './hooks/useTableSelection'
 export type {PaginationState} from './hooks/usePagination'
 export type {UseFilterUrlStateResult} from './hooks/useFilterUrlState'
+export {
+  buildCommentDocument,
+  buildCommentNotificationContext,
+  buildCommentTarget,
+  buildCommentThreads,
+  buildMessageFromPlainText,
+  buildStudioCommentUrl,
+  buildTaskCommentDocument,
+  buildTaskStudioUrl,
+  getCommentThreadField,
+  getCommentThreadsForField,
+  groupUnresolvedCommentsByField,
+  toPlainText,
+} from './comments'
+export type {
+  BuildCommentDocumentArgs,
+  BuildCommentNotificationContextArgs,
+  BuildCommentTargetArgs,
+  BuildStudioCommentUrlArgs,
+  BuildTaskStudioUrlArgs,
+  CommentComposerArgs,
+  CommentDocument,
+  CommentMessage,
+  CommentMutationApi,
+  CommentNotificationContext,
+  CommentOptimisticEdit,
+  CommentReaction,
+  CommentsAdapter,
+  CommentsState,
+  CommentStatus,
+  CommentTarget,
+  CommentThread,
+  CommentThreadGroup,
+  CrossDatasetReference,
+  Reference,
+  TaskCommentComposerArgs,
+} from './comments'
