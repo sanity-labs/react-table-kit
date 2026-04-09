@@ -11,7 +11,7 @@ import {
   buildTaskStudioUrl,
 } from '../src/comments'
 
-describe('@sanetti/sanity-table-kit comments', () => {
+describe('@sanity-labs/react-table-kit comments', () => {
   it('builds comment threads from parent and reply comments', () => {
     const target = buildCommentTarget({
       contentDataset: 'content',

@@ -7,9 +7,8 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "declaration": false,
+    "noEmit": true
   },
   "include": ["src/**/*"]
 }
