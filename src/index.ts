@@ -41,6 +41,7 @@ export type {
   ColumnDef,
   DocumentBase,
   DocumentTableProps,
+  FilterSurfaceTone,
   SortConfig,
   SelectionConfig,
   EditOption,

@@ -89,6 +89,7 @@ export function DocumentTableInner<T extends DocumentBase>({
   stripedRows,
   bulkActions,
   onSelectionChange,
+  dockToTopSurface,
   pageSize,
   reorderable,
   columnOrder: controlledColumnOrder,
@@ -107,6 +108,7 @@ export function DocumentTableInner<T extends DocumentBase>({
   stripedRows?: boolean
   bulkActions?: DocumentTableProps<T>['bulkActions']
   onSelectionChange?: (selectedRows: T[]) => void
+  dockToTopSurface?: boolean
   pageSize?: number
   reorderable?: boolean
   columnOrder?: string[]
@@ -562,9 +564,11 @@ export function DocumentTableInner<T extends DocumentBase>({
         <Card
           border
           radius={2}
+          data-testid="sanity-table-surface"
           className="sanity-table"
           style={{
             overflow: 'hidden',
+            ...(dockToTopSurface ? {borderTopLeftRadius: 0, borderTopRightRadius: 0} : {}),
             paddingBottom: hasSelection && selection.selectedCount > 0 ? 56 : undefined,
           }}
         >
