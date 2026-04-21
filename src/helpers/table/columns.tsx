@@ -116,8 +116,10 @@ interface StringColumnConfig<T extends DocumentBase = DocumentBase> extends Base
 /**
  * Configuration accepted by `column.title()`.
  */
-interface TitleColumnConfig<T extends DocumentBase = DocumentBase>
-  extends Omit<StringColumnConfig<T>, 'field'> {
+interface TitleColumnConfig<T extends DocumentBase = DocumentBase> extends Omit<
+  StringColumnConfig<T>,
+  'field'
+> {
   /** Document field path. Defaults to `'title'`. */
   field?: string
 }
