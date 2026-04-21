@@ -25,7 +25,7 @@ function getDateRangeTone(date: Date, enabled: boolean): 'primary' | 'caution' |
 // ─── Narrowed edit configs per helper ────────────────────────────────────────
 
 /**
- * Edit config for text-based columns (title).
+ * Edit config for text-based columns.
  * Mode is always 'text' — omitted from the consumer API.
  */
 interface TextEditConfig<T extends DocumentBase = DocumentBase> {
@@ -102,15 +102,26 @@ export type BadgeColorMapEntry = BadgeTone | {tone: BadgeTone; label: string}
 export type BadgeColorMap = Record<string, BadgeColorMapEntry>
 
 /**
- * Configuration accepted by `column.title()`.
+ * Configuration accepted by `column.string()`.
  */
-interface TitleColumnConfig<T extends DocumentBase = DocumentBase> extends BaseColumnConfig {
-  /** Document field path. Defaults to `'title'`. */
-  field?: string
+interface StringColumnConfig<T extends DocumentBase = DocumentBase> extends BaseColumnConfig {
+  /** Document field path. Required. */
+  field: string
   /** Whether this column can be sorted. Defaults to `true`. */
   sortable?: boolean
   /** Inline text editing. Pass `true` for SDK auto-save. */
   edit?: true | TextEditConfig<T>
+}
+
+/**
+ * Configuration accepted by `column.title()`.
+ */
+interface TitleColumnConfig<T extends DocumentBase = DocumentBase> extends Omit<
+  StringColumnConfig<T>,
+  'field'
+> {
+  /** Document field path. Defaults to `'title'`. */
+  field?: string
 }
 
 /**
@@ -214,6 +225,51 @@ function dateEdit<T extends DocumentBase>(config: DateEditConfig<T>): ColumnEdit
   return {mode: 'date', onSave: config.onSave, _toneByDateRange: config.toneByDateRange}
 }
 
+function humanizeFieldLabel(field: string): string {
+  const trimmed = field.trim()
+  if (trimmed.length === 0) return field
+
+  const dottedPathPattern = /^[A-Za-z_$][\w$-]*(\.[A-Za-z_$][\w$-]*)*$/
+  if (!dottedPathPattern.test(trimmed)) {
+    return trimmed
+  }
+
+  const leafSegment = trimmed.split('.').pop() ?? trimmed
+  const normalized = leafSegment
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (normalized.length === 0) {
+    return trimmed
+  }
+
+  return normalized.replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function buildStringColumn<T extends DocumentBase = DocumentBase>(
+  config: StringColumnConfig<T>,
+): ColumnDef<T> {
+  const {field, header, icon, sortable, flex, width, searchable, filterable, groupable, edit} =
+    config
+
+  return {
+    id: field,
+    header: header ?? humanizeFieldLabel(field),
+    field,
+    ...(icon && {icon}),
+    sortable: sortable ?? true,
+    ...(flex != null && {flex}),
+    ...(width != null && {width}),
+    ...(searchable != null && {searchable}),
+    ...(filterable != null && {filterable}),
+    ...(groupable != null && {groupable}),
+    ...(edit != null && edit !== true && {edit: textEdit(edit)}),
+    ...(edit === true && {edit: {mode: 'text' as const, _autoSave: true, _field: field}}),
+  } as ColumnDef<T>
+}
+
 // ─── Column helpers ──────────────────────────────────────────────────────────
 
 /**
@@ -224,7 +280,7 @@ function dateEdit<T extends DocumentBase>(config: DateEditConfig<T>): ColumnEdit
  * ```ts
  * const cols = [
  *   column.select({width: 24}),
- *   column.title({edit: true, searchable: true}),
+ *   column.string({field: 'title', edit: true, searchable: true}),
  *   column.type(),
  *   column.badge({field: 'status', colorMap: {draft: 'caution'}, edit: true}),
  *   column.date({field: 'dueDate', header: 'Due Date'}),
@@ -235,7 +291,23 @@ function dateEdit<T extends DocumentBase>(config: DateEditConfig<T>): ColumnEdit
  */
 export const column = {
   /**
-   * Title column — sortable by default. Edit mode: `text`.
+   * Generic string column — sortable by default. Edit mode: `text`.
+   *
+   * @example
+   * ```ts
+   * column.string({field: 'title'})
+   * column.string({field: 'name', edit: true})
+   * column.string({field: 'web.dueDate'})
+   * ```
+   */
+  string<T extends DocumentBase = DocumentBase>(config: StringColumnConfig<T>): ColumnDef<T> {
+    return buildStringColumn(config)
+  },
+
+  /**
+   * @deprecated Use `column.string({field: 'title'})` instead.
+   *
+   * Title column compatibility preset — sortable by default. Edit mode: `text`.
    *
    * @example
    * ```ts
@@ -245,23 +317,11 @@ export const column = {
    * ```
    */
   title<T extends DocumentBase = DocumentBase>(config?: TitleColumnConfig<T>): ColumnDef<T> {
-    const field = config?.field ?? 'title'
-    const header = config?.header ?? 'Title'
-
-    return {
-      id: field === 'title' ? 'title' : field,
-      header,
-      field,
-      ...(config?.icon && {icon: config.icon}),
-      sortable: config?.sortable ?? true,
-      ...(config?.flex != null && {flex: config.flex}),
-      ...(config?.width != null && {width: config.width}),
-      ...(config?.searchable != null && {searchable: config.searchable}),
-      ...(config?.filterable != null && {filterable: config.filterable}),
-      ...(config?.groupable != null && {groupable: config.groupable}),
-      ...(config?.edit != null && config.edit !== true && {edit: textEdit(config.edit)}),
-      ...(config?.edit === true && {edit: {mode: 'text' as const, _autoSave: true, _field: field}}),
-    } as ColumnDef<T>
+    return buildStringColumn({
+      ...config,
+      field: config?.field ?? 'title',
+      header: config?.header ?? 'Title',
+    })
   },
 
   /**

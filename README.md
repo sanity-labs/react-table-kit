@@ -27,7 +27,7 @@ Peer dependencies:
 import {DocumentTable, column} from '@sanity-labs/react-table-kit'
 
 const columns = [
-  column.title({field: 'title'}),
+  column.string({field: 'title'}),
   column.badge({
     field: 'status',
     colorMap: {
@@ -49,6 +49,9 @@ export function ExampleTable() {
   )
 }
 ```
+
+`column.string()` is the generic text-column helper. `column.title()` remains available as a
+deprecated compatibility preset for the common `title` field.
 
 ## Primary Exports
 
