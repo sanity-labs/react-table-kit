@@ -200,6 +200,10 @@ interface CustomColumnConfig<T extends DocumentBase = DocumentBase> extends Base
   sortable?: boolean
   /** Optional transform used when sorting this custom column. */
   sortValue?: (rawValue: unknown, row: T) => string | number
+  /** Optional transform used when grouping this custom column. */
+  groupValue?: (rawValue: unknown, row: T) => string
+  /** Optional backend field/expression used for server-side grouping. */
+  groupField?: string
   /**
    * Inline edit configuration.
    * Full ColumnEditConfig — any mode is available on custom columns.
@@ -465,6 +469,8 @@ export const column = {
       cell,
       sortable,
       sortValue,
+      groupValue,
+      groupField,
       filterable,
       groupable,
       searchable,
@@ -483,6 +489,8 @@ export const column = {
       ...(cell && {cell}),
       ...(sortable != null && {sortable}),
       ...(sortValue && {sortValue}),
+      ...(groupValue && {groupValue}),
+      ...(groupField && {_serverGroupField: groupField}),
       ...(filterable != null && {filterable}),
       ...(groupable != null && {groupable}),
       ...(searchable != null && {searchable}),

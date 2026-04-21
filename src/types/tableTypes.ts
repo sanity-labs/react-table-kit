@@ -126,11 +126,25 @@ export interface ColumnDef<T extends DocumentBase = DocumentBase> {
   sortValue?: (rawValue: unknown, row: T) => string | number
 
   /**
+   * Transform the raw value for grouping and group-header labels.
+   * Used by object-valued columns that need a human-readable group key.
+   * @internal
+   */
+  groupValue?: (rawValue: unknown, row: T) => string
+
+  /**
    * Backend field/expression to use when server-side sorting is enabled.
    * Lets display-oriented columns sort by a different GROQ path than their cell value.
    * @internal
    */
   _serverSortField?: string
+
+  /**
+   * Backend field/expression to use when server-side grouping is enabled.
+   * Lets display-oriented columns group by a different GROQ path than their cell value.
+   * @internal
+   */
+  _serverGroupField?: string
 
   /**
    * Whether this column appears in the filter UI.
@@ -198,6 +212,15 @@ export interface ServerSortConfig {
   sortableColumnIds?: string[]
 }
 
+export interface ServerGroupConfig {
+  /** Currently active group field from the backing data source. */
+  groupBy: string | null
+  /** Invoked when the user changes grouping so the backing data source can re-query. */
+  onGroupByChange: (groupBy: string | null) => void
+  /** Optional allow-list of groupable column IDs while in server-group mode. */
+  groupableColumnIds?: string[]
+}
+
 /**
  * Current selection state, passed to bulk action renderers.
  *
@@ -231,6 +254,8 @@ export interface DocumentTableProps<T extends DocumentBase = DocumentBase> {
   defaultSort?: SortConfig
   /** Controlled server-side sorting contract. */
   serverSort?: ServerSortConfig
+  /** Controlled server-side grouping contract. */
+  serverGroup?: ServerGroupConfig
 
   /** Called when a row is clicked (not on the select checkbox). */
   onRowClick?: (row: T) => void

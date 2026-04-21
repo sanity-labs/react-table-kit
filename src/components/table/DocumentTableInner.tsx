@@ -83,6 +83,7 @@ export function DocumentTableInner<T extends DocumentBase>({
   columns,
   defaultSort,
   serverSort,
+  serverGrouping = false,
   showPlaceholderRows,
   placeholderRowCount,
   grouping,
@@ -102,6 +103,7 @@ export function DocumentTableInner<T extends DocumentBase>({
   columns: ColumnDef<T>[]
   defaultSort?: {field: string; direction: 'asc' | 'desc'}
   serverSort?: DocumentTableProps<T>['serverSort']
+  serverGrouping?: boolean
   showPlaceholderRows?: boolean
   placeholderRowCount?: number
   grouping: ReturnType<typeof useTableGrouping<T>>
@@ -216,6 +218,7 @@ export function DocumentTableInner<T extends DocumentBase>({
 
   // Use our pagination hook for the UI
   const hasPagination = pageSize !== undefined
+  const prevPageIndexRef = useRef(paginationState.pageIndex)
 
   // Clear selection when data reference changes (e.g., filter applied)
   const [prevData, setPrevData] = useState(data)
@@ -226,6 +229,9 @@ export function DocumentTableInner<T extends DocumentBase>({
     }
     if (selectAllMode) {
       setSelectAllMode(false)
+    }
+    if (grouping.collapsedGroups.size > 0) {
+      grouping.clearCollapsedGroups()
     }
     // Reset pagination to page 1 when data changes
     if (hasPagination && paginationState.pageIndex !== 0) {
@@ -377,7 +383,31 @@ export function DocumentTableInner<T extends DocumentBase>({
   }, [reorderable, headerGroupsKey])
   const prevHasVisibleRows = useRef(false)
 
-  const {groupBy, collapsedGroups, toggleGroup} = grouping
+  const {groupBy, collapsedGroups, clearCollapsedGroups, toggleGroup} = grouping
+
+  useEffect(() => {
+    if (!hasPagination) return
+    if (prevPageIndexRef.current === paginationState.pageIndex) return
+
+    prevPageIndexRef.current = paginationState.pageIndex
+    clearCollapsedGroups()
+  }, [clearCollapsedGroups, hasPagination, paginationState.pageIndex])
+  const groupingColumn = useMemo(
+    () => columns.find((column) => column.id === groupBy || column.field === groupBy),
+    [columns, groupBy],
+  )
+  const resolveGroupName = useCallback(
+    (row: T) => {
+      if (!groupBy) return ''
+      const rawField = groupingColumn?.field ?? groupBy
+      const rawValue = row[rawField]
+      if (groupingColumn?.groupValue) {
+        return groupingColumn.groupValue(rawValue, row)
+      }
+      return String(rawValue ?? '')
+    },
+    [groupBy, groupingColumn],
+  )
 
   const sortedRows = table.getRowModel().rows
   const loadingRows = useMemo(
@@ -433,16 +463,35 @@ export function DocumentTableInner<T extends DocumentBase>({
   // Compute groups from sorted data
   const groups = useMemo(() => {
     if (!groupBy) return null
+
+    if (serverGrouping) {
+      const orderedGroups: Array<{key: string; name: string; rows: typeof sortedRows}> = []
+      for (const row of sortedRows) {
+        const name = resolveGroupName(row.original)
+        const currentGroup = orderedGroups[orderedGroups.length - 1]
+        if (currentGroup && currentGroup.name === name) {
+          currentGroup.rows.push(row)
+          continue
+        }
+        orderedGroups.push({
+          key: `${name}-${orderedGroups.length}`,
+          name,
+          rows: [row],
+        })
+      }
+      return orderedGroups
+    }
+
     const groupMap = new Map<string, typeof sortedRows>()
     for (const row of sortedRows) {
-      const key = String(row.original[groupBy] ?? '')
+      const key = resolveGroupName(row.original)
       if (!groupMap.has(key)) {
         groupMap.set(key, [])
       }
       groupMap.get(key)!.push(row)
     }
-    return Array.from(groupMap.entries()).map(([name, rows]) => ({name, rows}))
-  }, [groupBy, sortedRows])
+    return Array.from(groupMap.entries()).map(([name, rows]) => ({key: name, name, rows}))
+  }, [groupBy, resolveGroupName, serverGrouping, sortedRows])
 
   const headerGroups = table.getHeaderGroups()
   const visibleColumnIds = useMemo(
@@ -746,15 +795,16 @@ export function DocumentTableInner<T extends DocumentBase>({
                     : groups
                       ? // Grouped rendering
                         groups.map((group) => {
-                          const isCollapsed = collapsedGroups.has(group.name)
+                          const isCollapsed = collapsedGroups.has(group.key)
                           return (
                             <GroupSection
-                              key={group.name}
+                              key={group.key}
                               groupName={group.name}
                               rows={group.rows}
                               isCollapsed={isCollapsed}
-                              onToggle={() => toggleGroup(group.name)}
+                              onToggle={() => toggleGroup(group.key)}
                               gridTemplateColumns={gridTemplateColumns}
+                              stripedRows={stripedRows}
                               reorderable={reorderable}
                               columnPositionMap={columnPositionMap}
                               isDragging={isDragging}

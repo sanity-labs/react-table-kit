@@ -53,6 +53,55 @@ export function ExampleTable() {
 `column.string()` is the generic text-column helper. `column.title()` remains available as a
 deprecated compatibility preset for the common `title` field.
 
+## Server-Backed Grouping
+
+Use controlled `serverGroup` mode when your backing data source already returns rows in grouped order and needs to re-query when the user changes the active group:
+
+```tsx
+import {DocumentTable, column} from '@sanity-labs/react-table-kit'
+
+const columns = [
+  column.string({field: 'title'}),
+  column.custom({
+    field: 'status',
+    header: 'Status',
+    groupable: true,
+    groupValue: (rawValue) => String(rawValue ?? '').replace('-', ' '),
+    groupField: 'coalesce(status, "draft")',
+  }),
+]
+
+export function GroupedTable({
+  groupBy,
+  onGroupByChange,
+  rows,
+}: {
+  groupBy: string | null
+  onGroupByChange: (groupBy: string | null) => void
+  rows: Array<{_id: string; _type: string; title: string; status: string}>
+}) {
+  return (
+    <DocumentTable
+      data={rows}
+      columns={columns}
+      serverGroup={{
+        groupBy,
+        onGroupByChange,
+        groupableColumnIds: ['status'],
+      }}
+    />
+  )
+}
+```
+
+Notes:
+
+- `serverGroup.groupBy` is the currently active group key, or `null` for no grouping.
+- `serverGroup.onGroupByChange` is called when the user changes the group from the filter bar.
+- `groupValue` controls the visible group label for display-oriented columns.
+- `groupField` lets custom columns group by a different backend field or expression than the cell
+  value.
+
 ## Primary Exports
 
 - `DocumentTable`

@@ -19,6 +19,7 @@ export function GroupSection<T extends DocumentBase>({
   isCollapsed,
   onToggle,
   gridTemplateColumns,
+  stripedRows,
   reorderable,
   columnPositionMap,
   isDragging,
@@ -32,6 +33,7 @@ export function GroupSection<T extends DocumentBase>({
   isCollapsed: boolean
   onToggle: () => void
   gridTemplateColumns: string
+  stripedRows?: boolean
   reorderable?: boolean
   columnPositionMap: Record<string, number>
   isDragging: boolean
@@ -94,69 +96,74 @@ export function GroupSection<T extends DocumentBase>({
           </Flex>
         </div>
       </Card>
-      {rows.map((row, i) => (
-        <div
-          key={row.id}
-          role="row"
-          style={{
-            display: isCollapsed ? 'none' : 'grid',
-            gridTemplateColumns,
-            borderBottom: '1px solid var(--card-border-color)',
-            backgroundColor:
-              i % 2 === 0 ? 'var(--card-code-bg-color, var(--card-bg2-color))' : undefined,
-          }}
-        >
-          {row.getAllCells().map((cell) => {
-            const isEditable = cell.column.columnDef.meta?.editable as boolean
-            const isTextEdit = cell.column.columnDef.meta?.editMode === 'text'
-            return (
-              <motion.div
-                layout={isDragging && !isResizing ? 'position' : undefined}
-                layoutId={reorderable ? `gcell-${cell.id}` : undefined}
-                transition={
-                  isDragging && !isResizing
-                    ? {type: 'spring', stiffness: 500, damping: 35}
-                    : {duration: 0}
-                }
-                role="cell"
-                key={cell.id}
-                className={isTextEdit ? 'editable-text' : undefined}
-                style={{
-                  padding: isTextEdit ? 0 : '10px 16px',
-                  cursor: isEditable ? 'pointer' : undefined,
-                  borderRight: '1px solid var(--card-border-color)',
-                  overflow: 'hidden',
-                  display: isTextEdit ? undefined : 'flex',
-                  alignItems: isTextEdit ? undefined : 'center',
-                  gridColumn: reorderable ? columnPositionMap[cell.column.id] : undefined,
-                }}
-              >
-                <Suspense
-                  fallback={
-                    cell.column.id === 'select' || cell.column.id === '_select' ? (
-                      <Checkbox aria-label="Loading selection" checked={false} disabled />
-                    ) : cell.column.id === '_status' || cell.column.id === 'openInStudio' ? null : (
-                      <div
-                        className="loading-row-skeleton"
-                        style={{width: getPlaceholderWidth(cell.column.id)}}
-                      />
-                    )
+      {!isCollapsed &&
+        rows.map((row, i) => (
+          <div
+            key={row.id}
+            role="row"
+            style={{
+              display: 'grid',
+              gridTemplateColumns,
+              borderBottom: '1px solid var(--card-border-color)',
+              backgroundColor: stripedRows
+                ? i % 2 === 1
+                  ? 'var(--card-code-bg-color, var(--card-bg2-color))'
+                  : undefined
+                : undefined,
+            }}
+          >
+            {row.getAllCells().map((cell) => {
+              const isEditable = cell.column.columnDef.meta?.editable as boolean
+              const isTextEdit = cell.column.columnDef.meta?.editMode === 'text'
+              return (
+                <motion.div
+                  layout={isDragging && !isResizing ? 'position' : undefined}
+                  layoutId={reorderable ? `gcell-${cell.id}` : undefined}
+                  transition={
+                    isDragging && !isResizing
+                      ? {type: 'spring', stiffness: 500, damping: 35}
+                      : {duration: 0}
                   }
+                  role="cell"
+                  key={cell.id}
+                  className={isTextEdit ? 'editable-text' : undefined}
+                  style={{
+                    padding: isTextEdit ? 0 : '10px 16px',
+                    cursor: isEditable ? 'pointer' : undefined,
+                    borderRight: '1px solid var(--card-border-color)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gridColumn: reorderable ? columnPositionMap[cell.column.id] : undefined,
+                  }}
                 >
-                  {(() => {
-                    const template = cell.column.columnDef.cell
-                    const context = cell.getContext()
-                    if (cell.column.id === '_tasks' && typeof template === 'function') {
-                      return template(context)
+                  <Suspense
+                    fallback={
+                      cell.column.id === 'select' || cell.column.id === '_select' ? (
+                        <Checkbox aria-label="Loading selection" checked={false} disabled />
+                      ) : cell.column.id === '_status' ||
+                        cell.column.id === 'openInStudio' ? null : (
+                        <div
+                          className="loading-row-skeleton"
+                          style={{width: getPlaceholderWidth(cell.column.id)}}
+                        />
+                      )
                     }
-                    return flexRender(template, context)
-                  })()}
-                </Suspense>
-              </motion.div>
-            )
-          })}
-        </div>
-      ))}
+                  >
+                    {(() => {
+                      const template = cell.column.columnDef.cell
+                      const context = cell.getContext()
+                      if (cell.column.id === '_tasks' && typeof template === 'function') {
+                        return template(context)
+                      }
+                      return flexRender(template, context)
+                    })()}
+                  </Suspense>
+                </motion.div>
+              )
+            })}
+          </div>
+        ))}
     </>
   )
 }

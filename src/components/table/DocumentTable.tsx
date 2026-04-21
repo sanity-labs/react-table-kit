@@ -19,6 +19,7 @@ export function DocumentTable<T extends DocumentBase>({
   columns,
   defaultSort,
   serverSort,
+  serverGroup,
   loading = false,
   transitionLoadingRowCount,
   emptyMessage = 'No documents found',
@@ -56,6 +57,10 @@ export function DocumentTable<T extends DocumentBase>({
     () => columns.filter((c) => c.groupable).map((c) => c.field ?? c.id),
     [columns],
   )
+  const effectiveGroupableColumns = useMemo(
+    () => serverGroup?.groupableColumnIds ?? groupableColumns,
+    [groupableColumns, serverGroup?.groupableColumnIds],
+  )
   const columnFilterConfigs = useMemo(
     () =>
       columns
@@ -74,7 +79,14 @@ export function DocumentTable<T extends DocumentBase>({
     computedFilters,
   })
 
-  const grouping = useTableGrouping<T>()
+  const grouping = useTableGrouping<T>(
+    serverGroup
+      ? {
+          groupBy: serverGroup.groupBy,
+          onGroupByChange: serverGroup.onGroupByChange,
+        }
+      : undefined,
+  )
   const {groupBy, setGroupBy} = grouping
 
   // Stale-while-revalidate: track the last valid data we received.
@@ -100,7 +112,7 @@ export function DocumentTable<T extends DocumentBase>({
       Boolean(filterBarSearchLeading) ||
       filterableColumns.length > 0 ||
       searchableFields.length > 0 ||
-      groupableColumns.length > 0)
+      effectiveGroupableColumns.length > 0)
   const dockedToTopSurface = showFilterBar || dockToTopSurface
   const dockedCardStyle = dockedToTopSurface
     ? {borderTopLeftRadius: 0, borderTopRightRadius: 0}
@@ -155,7 +167,7 @@ export function DocumentTable<T extends DocumentBase>({
           data={displayData}
           filterableColumns={filterableColumns}
           columns={columns}
-          groupableColumns={groupableColumns}
+          groupableColumns={effectiveGroupableColumns}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}
           leading={filterBarLeading}
@@ -179,6 +191,7 @@ export function DocumentTable<T extends DocumentBase>({
           columns={columns}
           defaultSort={defaultSort}
           serverSort={serverSort}
+          serverGrouping={!!serverGroup}
           showPlaceholderRows={showTransitionLoading}
           placeholderRowCount={transitionLoadingRowCount}
           grouping={grouping}
