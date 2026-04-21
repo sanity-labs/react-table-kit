@@ -34,6 +34,11 @@ export function DocumentTable<T extends DocumentBase>({
   isCreating,
   computedFilters,
   hideFilterBar = false,
+  filterBarLeading,
+  filterBarSearchLeading,
+  filterBarSurfaceTone,
+  filterBarSurfaceStyle,
+  dockToTopSurface = false,
 }: DocumentTableProps<T>) {
   const filterableColumns = useMemo(
     () => columns.filter((c) => c.filterable).map((c) => c.field ?? c.id),
@@ -91,12 +96,26 @@ export function DocumentTable<T extends DocumentBase>({
 
   const showFilterBar =
     !hideFilterBar &&
-    (filterableColumns.length > 0 || searchableFields.length > 0 || groupableColumns.length > 0)
+    (Boolean(filterBarLeading) ||
+      Boolean(filterBarSearchLeading) ||
+      filterableColumns.length > 0 ||
+      searchableFields.length > 0 ||
+      groupableColumns.length > 0)
+  const dockedToTopSurface = showFilterBar || dockToTopSurface
+  const dockedCardStyle = dockedToTopSurface
+    ? {borderTopLeftRadius: 0, borderTopRightRadius: 0}
+    : undefined
 
   // Loading skeleton — only on initial load (no data ever received)
   if (isInitialLoad) {
     return (
-      <Card padding={4} data-testid="sanity-table-skeleton">
+      <Card
+        padding={4}
+        data-testid="sanity-table-skeleton"
+        radius={2}
+        border
+        style={dockedCardStyle}
+      >
         <Stack space={3}>
           {Array.from({length: 5}).map((_, i) => (
             <Flex key={i} gap={3} align="center">
@@ -118,7 +137,7 @@ export function DocumentTable<T extends DocumentBase>({
   // Empty state (no data at all)
   if (displayData.length === 0) {
     return (
-      <Card padding={5} radius={2}>
+      <Card padding={5} radius={2} border style={dockedCardStyle}>
         <Stack space={3} style={{textAlign: 'center'}}>
           <Text muted size={2}>
             {emptyMessage}
@@ -129,7 +148,7 @@ export function DocumentTable<T extends DocumentBase>({
   }
 
   return (
-    <Stack space={3}>
+    <Stack space={showFilterBar ? 0 : 3}>
       {showFilterBar && (
         <FilterBar
           filters={filters}
@@ -139,10 +158,15 @@ export function DocumentTable<T extends DocumentBase>({
           groupableColumns={groupableColumns}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}
+          leading={filterBarLeading}
+          searchLeading={filterBarSearchLeading}
+          surfaceTone={filterBarSurfaceTone}
+          surfaceStyle={filterBarSurfaceStyle}
+          dockToTable
         />
       )}
       {!showTransitionLoading && filteredData && filteredData.length === 0 ? (
-        <Card padding={5} radius={2}>
+        <Card padding={5} radius={2} border style={dockedCardStyle}>
           <Stack space={3} style={{textAlign: 'center'}}>
             <Text muted size={2}>
               No documents match your filters
@@ -161,6 +185,7 @@ export function DocumentTable<T extends DocumentBase>({
           stripedRows={stripedRows}
           bulkActions={bulkActions}
           onSelectionChange={onSelectionChange}
+          dockToTopSurface={dockedToTopSurface}
           pageSize={pageSize}
           reorderable={reorderable}
           columnOrder={controlledColumnOrder}

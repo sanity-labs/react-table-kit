@@ -240,4 +240,59 @@ describe('T1-3: FilterBar range columns and computed filter chips', () => {
     expect(chip).toBeInTheDocument()
     expect(chip.textContent).toContain('High Budget')
   })
+
+  it('B7: wraps controls and active chips in one bordered filter surface', () => {
+    const mockFilters = createMockFilters({
+      filters: {status: 'draft'},
+      hasActiveFilters: true,
+    })
+
+    renderWithTheme(
+      <FilterBar
+        filters={mockFilters}
+        data={testData}
+        filterableColumns={['status']}
+        columns={testColumns}
+      />,
+    )
+
+    const surface = screen.getByTestId('filter-surface')
+    const chip = screen.getByTestId('filter-chip-status')
+
+    expect(surface).toBeInTheDocument()
+    expect(surface).toContainElement(screen.getByText('Filter By'))
+    expect(surface).toContainElement(chip)
+  })
+
+  it('B8: docked filter surface removes its bottom border and corners', () => {
+    const mockFilters = createMockFilters()
+
+    renderWithTheme(
+      <FilterBar
+        filters={mockFilters}
+        data={testData}
+        filterableColumns={['status']}
+        columns={testColumns}
+        dockToTable
+      />,
+    )
+
+    expect(screen.getByTestId('filter-surface')).toHaveAttribute('data-docked-to-table', 'true')
+  })
+
+  it('B9: surface tone is exposed on the full filter surface', () => {
+    const mockFilters = createMockFilters()
+
+    renderWithTheme(
+      <FilterBar
+        filters={mockFilters}
+        data={testData}
+        filterableColumns={['status']}
+        columns={testColumns}
+        surfaceTone="caution"
+      />,
+    )
+
+    expect(screen.getByTestId('filter-surface')).toHaveAttribute('data-surface-tone', 'caution')
+  })
 })

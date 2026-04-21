@@ -1,4 +1,13 @@
-import type {ComponentType, ReactNode, SVGProps} from 'react'
+import type {CSSProperties, ComponentType, ReactNode, SVGProps} from 'react'
+
+export type FilterSurfaceTone =
+  | 'transparent'
+  | 'default'
+  | 'primary'
+  | 'suggest'
+  | 'positive'
+  | 'caution'
+  | 'critical'
 
 /**
  * Base document shape for all table rows.
@@ -279,4 +288,35 @@ export interface DocumentTableProps<T extends DocumentBase = DocumentBase> {
 
   /** Hide the legacy built-in filter bar. */
   hideFilterBar?: boolean
+
+  /**
+   * Optional slot rendered as the first child of the internal FilterBar's flex row,
+   * to the left of the filter controls and search input.
+   * Consumers (e.g. the Sanity SDK table kit) use this to inject surface-level UI
+   * such as a global perspective / release picker alongside Search.
+   */
+  filterBarLeading?: ReactNode
+
+  /**
+   * Optional slot rendered immediately before the internal Search control.
+   * Useful when the consumer wants custom UI to sit adjacent to Search rather
+   * than at the far left of the filter toolbar.
+   */
+  filterBarSearchLeading?: ReactNode
+
+  /** Tone applied to the full filter surface wrapper. */
+  filterBarSurfaceTone?: FilterSurfaceTone
+
+  /**
+   * Optional inline styles applied to the filter surface wrapper.
+   * Callers can use this to tint the full filter area without having to restyle
+   * individual controls.
+   */
+  filterBarSurfaceStyle?: CSSProperties
+
+  /**
+   * When true, the rendered table surface flattens its top corners so it can
+   * visually dock to an external filter/header surface above it.
+   */
+  dockToTopSurface?: boolean
 }

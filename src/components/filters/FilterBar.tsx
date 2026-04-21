@@ -16,18 +16,26 @@ import {
   useGlobalKeyDown,
 } from '@sanity/ui'
 import {format} from 'date-fns'
-import type {KeyboardEvent as ReactKeyboardEvent} from 'react'
+import type {CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode} from 'react'
 import {useCallback, useMemo, useRef, useState} from 'react'
 import {DayPicker, type DateRange} from 'react-day-picker'
 
 import {parseRangeValue} from '../../hooks/useTableFilters'
 import type {UseTableFiltersResult} from '../../hooks/useTableFilters'
-import type {ColumnDef, DocumentBase} from '../../types/tableTypes'
+import type {ColumnDef, DocumentBase, FilterSurfaceTone} from '../../types/tableTypes'
 import {
   CalendarPopoverContent,
   formatDateOnlyString,
   parseDateOnlyString,
 } from './CalendarPopoverContent'
+
+function DefaultToneScope({children}: {children: ReactNode}) {
+  return (
+    <Card padding={0} radius={0} tone="default" style={{background: 'transparent'}}>
+      {children}
+    </Card>
+  )
+}
 
 interface FilterBarProps<T extends DocumentBase> {
   filters: UseTableFiltersResult<T>
@@ -37,6 +45,19 @@ interface FilterBarProps<T extends DocumentBase> {
   groupableColumns?: string[]
   groupBy?: string | null
   onGroupByChange?: (value: string | null) => void
+  /**
+   * Optional slot rendered as the first child of the top-level filter Flex,
+   * to the left of the filter dropdowns, group-by select, and search input.
+   */
+  leading?: ReactNode
+  /** Optional slot rendered immediately before the search field. */
+  searchLeading?: ReactNode
+  /** Optional style overrides for the outer filter surface. */
+  surfaceStyle?: CSSProperties
+  /** Tone applied to the outer filter surface. */
+  surfaceTone?: FilterSurfaceTone
+  /** Whether the filter surface should dock visually into the table below. */
+  dockToTable?: boolean
 }
 
 /**
@@ -51,6 +72,11 @@ export function FilterBar<T extends DocumentBase>({
   groupableColumns,
   groupBy,
   onGroupByChange,
+  leading,
+  searchLeading,
+  surfaceStyle,
+  surfaceTone = 'transparent',
+  dockToTable = false,
 }: FilterBarProps<T>) {
   const {
     filters: activeFilters,
@@ -65,180 +91,213 @@ export function FilterBar<T extends DocumentBase>({
 
   const hasFilters = filterableColumns.length > 0 || filters.searchQuery !== undefined
   const hasGroupBy = groupableColumns && groupableColumns.length > 0
+  const cardStyle: CSSProperties = {
+    backgroundColor: 'var(--filter-surface-bg-color, var(--card-bg-color))',
+    borderColor: 'var(--filter-surface-border-color, var(--card-border-color))',
+    ...(dockToTable
+      ? {
+          borderBottom: 'none',
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+        }
+      : {}),
+    ...surfaceStyle,
+  }
 
   return (
-    <Stack space={3}>
-      <Flex gap={4} wrap="wrap" align="center">
-        {/* Filter dropdowns */}
-        {hasFilters && (
-          <Stack space={2} className="max-w-sm">
-            <Label size={2} muted>
-              Filter By
-            </Label>
-            <Flex gap={2} wrap="wrap" align="center">
-              {filterableColumns.map((columnId) => {
-                const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
-                const isRange = colDef?.filterMode === 'range'
-                const label = colDef?.header ?? capitalize(columnId)
+    <Card
+      border
+      data-testid="filter-surface"
+      data-docked-to-table={dockToTable ? 'true' : 'false'}
+      data-surface-tone={surfaceTone}
+      paddingX={4}
+      paddingY={3}
+      radius={2}
+      tone={surfaceTone}
+      style={cardStyle}
+    >
+      <Stack space={3}>
+        <Flex gap={4} wrap="wrap" align="center">
+          {leading}
 
-                if (isRange) {
+          {/* Filter dropdowns */}
+          {hasFilters && (
+            <Stack space={2} className="max-w-sm">
+              <Label size={2} muted>
+                Filter By
+              </Label>
+              <Flex gap={2} wrap="wrap" align="center">
+                {filterableColumns.map((columnId) => {
+                  const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
+                  const isRange = colDef?.filterMode === 'range'
+                  const label = colDef?.header ?? capitalize(columnId)
+
+                  if (isRange) {
+                    return (
+                      <DateRangeFilter
+                        key={columnId}
+                        columnId={columnId}
+                        label={label}
+                        value={activeFilters[columnId]}
+                        onFilterChange={setFilter}
+                      />
+                    )
+                  }
+
+                  const options = getFilterOptions(columnId, data)
+                  const currentValue = activeFilters[columnId]
+
                   return (
-                    <DateRangeFilter
+                    <FilterDropdown
                       key={columnId}
                       columnId={columnId}
                       label={label}
-                      value={activeFilters[columnId]}
-                      onFilterChange={setFilter}
+                      options={options}
+                      value={currentValue}
+                      onSelect={(value) => setFilter(columnId, value)}
                     />
                   )
-                }
+                })}
+              </Flex>
+            </Stack>
+          )}
 
-                const options = getFilterOptions(columnId, data)
-                const currentValue = activeFilters[columnId]
-
-                return (
-                  <FilterDropdown
-                    key={columnId}
-                    columnId={columnId}
-                    label={label}
-                    options={options}
-                    value={currentValue}
-                    onSelect={(value) => setFilter(columnId, value)}
-                  />
-                )
-              })}
-            </Flex>
-          </Stack>
-        )}
-
-        {/* Group by */}
-        {hasGroupBy && onGroupByChange && (
-          <Stack space={2} className="pr-auto max-w-md">
-            <Label size={2} muted>
-              Group by:
-            </Label>
-            <Select
-              data-testid="group-by-select"
-              value={groupBy ?? ''}
-              onChange={(e) => {
-                const value = e.currentTarget.value
-                onGroupByChange(value || null)
-              }}
-              fontSize={1}
-              padding={3}
-            >
-              <option value="">None</option>
-              {groupableColumns!.map((col) => (
-                <option key={col} value={col}>
-                  {col}
-                </option>
-              ))}
-            </Select>
-          </Stack>
-        )}
-
-        {/* Search input */}
-        {filters.searchQuery !== undefined && (
-          <Stack space={2} className="max-w-sm">
-            <Label size={2} muted>
-              Search
-            </Label>
-            <TextInput
-              icon={SearchIcon}
-              placeholder="Search..."
-              value={searchInputValue}
-              onChange={(e) => setSearchInput(e.currentTarget.value)}
-              fontSize={1}
-              padding={3}
-              style={{minWidth: 200, flex: '1 1 200px'}}
-            />
-          </Stack>
-        )}
-      </Flex>
-
-      {/* Active filter chips */}
-      {hasActiveFilters && (
-        <Flex gap={2} wrap="wrap" align="center">
-          {Object.entries(activeFilters).map(([columnId, value]) => {
-            if (value === undefined) return null
-            const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
-            const label = colDef?.header ?? capitalize(columnId)
-
-            // Format range values nicely
-            const isRangeValue = value?.includes('..')
-            let chipText: string
-            if (isRangeValue) {
-              const {min, max} = parseRangeValue(value)
-              const formatDate = (d: string) => {
-                const date = new Date(d + 'T00:00:00') // local time
-                return format(date, 'MMM d')
-              }
-              const rangeText =
-                min && max
-                  ? `${formatDate(min)} → ${formatDate(max)}`
-                  : min
-                    ? `≥ ${formatDate(min)}`
-                    : max
-                      ? `≤ ${formatDate(max)}`
-                      : value
-              chipText = `${label}: ${rangeText}`
-            } else {
-              chipText = `${label}: ${value}`
-            }
-
-            return (
-              <Card
-                key={columnId}
-                data-testid={`filter-chip-${columnId}`}
-                padding={2}
-                radius={2}
-                tone="primary"
+          {/* Group by */}
+          {hasGroupBy && onGroupByChange && (
+            <Stack space={2} className="pr-auto max-w-md">
+              <Label size={2} muted>
+                Group by:
+              </Label>
+              <Select
+                data-testid="group-by-select"
+                value={groupBy ?? ''}
+                onChange={(e) => {
+                  const value = e.currentTarget.value
+                  onGroupByChange(value || null)
+                }}
+                fontSize={1}
+                padding={3}
               >
+                <option value="">None</option>
+                {groupableColumns!.map((col) => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </Select>
+            </Stack>
+          )}
+
+          {/* Search input */}
+          {filters.searchQuery !== undefined && (
+            <>
+              {searchLeading}
+              <Stack space={2} className="max-w-sm">
+                <Label size={2} muted>
+                  Search
+                </Label>
+                <DefaultToneScope>
+                  <TextInput
+                    icon={SearchIcon}
+                    placeholder="Search..."
+                    value={searchInputValue}
+                    onChange={(e) => setSearchInput(e.currentTarget.value)}
+                    fontSize={1}
+                    padding={3}
+                    style={{minWidth: 200, flex: '1 1 200px'}}
+                  />
+                </DefaultToneScope>
+              </Stack>
+            </>
+          )}
+          {filters.searchQuery === undefined && searchLeading}
+        </Flex>
+
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <Flex gap={2} wrap="wrap" align="center">
+            {Object.entries(activeFilters).map(([columnId, value]) => {
+              if (value === undefined) return null
+              const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
+              const label = colDef?.header ?? capitalize(columnId)
+
+              // Format range values nicely
+              const isRangeValue = value?.includes('..')
+              let chipText: string
+              if (isRangeValue) {
+                const {min, max} = parseRangeValue(value)
+                const formatDate = (d: string) => {
+                  const date = new Date(d + 'T00:00:00') // local time
+                  return format(date, 'MMM d')
+                }
+                const rangeText =
+                  min && max
+                    ? `${formatDate(min)} → ${formatDate(max)}`
+                    : min
+                      ? `≥ ${formatDate(min)}`
+                      : max
+                        ? `≤ ${formatDate(max)}`
+                        : value
+                chipText = `${label}: ${rangeText}`
+              } else {
+                chipText = `${label}: ${value}`
+              }
+
+              return (
+                <Card
+                  key={columnId}
+                  data-testid={`filter-chip-${columnId}`}
+                  padding={2}
+                  radius={2}
+                  tone="primary"
+                >
+                  <Flex align="center" gap={2}>
+                    <Text size={1}>{chipText}</Text>
+                    <Button
+                      data-testid={`filter-chip-remove-${columnId}`}
+                      icon={CloseIcon}
+                      mode="bleed"
+                      onClick={() => clearFilter(columnId)}
+                      padding={1}
+                      fontSize={0}
+                    />
+                  </Flex>
+                </Card>
+              )
+            })}
+
+            {/* Computed filter chip */}
+            {filters.computedFilter && filters.computedFilters && (
+              <Card data-testid="filter-chip-computed" padding={2} radius={2} tone="primary">
                 <Flex align="center" gap={2}>
-                  <Text size={1}>{chipText}</Text>
+                  <Text size={1}>
+                    {filters.computedFilters[filters.computedFilter]?.label ??
+                      filters.computedFilter}
+                  </Text>
                   <Button
-                    data-testid={`filter-chip-remove-${columnId}`}
+                    data-testid="filter-chip-remove-computed"
                     icon={CloseIcon}
                     mode="bleed"
-                    onClick={() => clearFilter(columnId)}
+                    onClick={() => filters.setComputedFilter(null)}
                     padding={1}
                     fontSize={0}
                   />
                 </Flex>
               </Card>
-            )
-          })}
+            )}
 
-          {/* Computed filter chip */}
-          {filters.computedFilter && filters.computedFilters && (
-            <Card data-testid="filter-chip-computed" padding={2} radius={2} tone="primary">
-              <Flex align="center" gap={2}>
-                <Text size={1}>
-                  {filters.computedFilters[filters.computedFilter]?.label ?? filters.computedFilter}
-                </Text>
-                <Button
-                  data-testid="filter-chip-remove-computed"
-                  icon={CloseIcon}
-                  mode="bleed"
-                  onClick={() => filters.setComputedFilter(null)}
-                  padding={1}
-                  fontSize={0}
-                />
-              </Flex>
-            </Card>
-          )}
-
-          <Button
-            fontSize={1}
-            mode="bleed"
-            onClick={clearAll}
-            padding={2}
-            text="Clear all"
-            tone="critical"
-          />
-        </Flex>
-      )}
-    </Stack>
+            <Button
+              fontSize={1}
+              mode="bleed"
+              onClick={clearAll}
+              padding={2}
+              text="Clear all"
+              tone="critical"
+            />
+          </Flex>
+        )}
+      </Stack>
+    </Card>
   )
 }
 
@@ -345,17 +404,20 @@ function DateRangeFilter({
         {label}
       </Label>
       <Popover
+        animate
         content={
-          <CalendarPopoverContent onKeyDown={handleKeyDown} popoverRef={popoverRef}>
-            <DayPicker
-              mode="range"
-              selected={draftRange}
-              onSelect={handleSelect}
-              defaultMonth={draftRange?.from ?? committedRange?.from}
-              numberOfMonths={1}
-              showOutsideDays
-            />
-          </CalendarPopoverContent>
+          <Card padding={2} radius={3} tone="default">
+            <CalendarPopoverContent onKeyDown={handleKeyDown} popoverRef={popoverRef}>
+              <DayPicker
+                mode="range"
+                selected={draftRange}
+                onSelect={handleSelect}
+                defaultMonth={draftRange?.from ?? committedRange?.from}
+                numberOfMonths={1}
+                showOutsideDays
+              />
+            </CalendarPopoverContent>
+          </Card>
         }
         open={open}
         placement="bottom-start"
@@ -420,7 +482,7 @@ function FilterDropdown({
           ))}
         </Menu>
       }
-      popover={{portal: false}}
+      popover={{animate: true, placement: 'bottom-start', portal: false, tone: 'default'}}
     />
   )
 }
