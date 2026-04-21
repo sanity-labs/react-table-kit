@@ -19,6 +19,7 @@ export function GroupSection<T extends DocumentBase>({
   isCollapsed,
   onToggle,
   gridTemplateColumns,
+  stripedRows,
   reorderable,
   columnPositionMap,
   isDragging,
@@ -32,6 +33,7 @@ export function GroupSection<T extends DocumentBase>({
   isCollapsed: boolean
   onToggle: () => void
   gridTemplateColumns: string
+  stripedRows?: boolean
   reorderable?: boolean
   columnPositionMap: Record<string, number>
   isDragging: boolean
@@ -94,16 +96,20 @@ export function GroupSection<T extends DocumentBase>({
           </Flex>
         </div>
       </Card>
-      {rows.map((row, i) => (
+      {!isCollapsed &&
+        rows.map((row, i) => (
         <div
           key={row.id}
           role="row"
           style={{
-            display: isCollapsed ? 'none' : 'grid',
+            display: 'grid',
             gridTemplateColumns,
             borderBottom: '1px solid var(--card-border-color)',
-            backgroundColor:
-              i % 2 === 0 ? 'var(--card-code-bg-color, var(--card-bg2-color))' : undefined,
+            backgroundColor: stripedRows
+              ? i % 2 === 1
+                ? 'var(--card-code-bg-color, var(--card-bg2-color))'
+                : undefined
+              : undefined,
           }}
         >
           {row.getAllCells().map((cell) => {
@@ -126,8 +132,8 @@ export function GroupSection<T extends DocumentBase>({
                   cursor: isEditable ? 'pointer' : undefined,
                   borderRight: '1px solid var(--card-border-color)',
                   overflow: 'hidden',
-                  display: isTextEdit ? undefined : 'flex',
-                  alignItems: isTextEdit ? undefined : 'center',
+                  display: 'flex',
+                  alignItems: 'center',
                   gridColumn: reorderable ? columnPositionMap[cell.column.id] : undefined,
                 }}
               >

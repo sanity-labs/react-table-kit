@@ -42,6 +42,7 @@ export type {
   DocumentBase,
   DocumentTableProps,
   FilterSurfaceTone,
+  ServerGroupConfig,
   SortConfig,
   SelectionConfig,
   EditOption,

@@ -166,7 +166,7 @@ export function FilterBar<T extends DocumentBase>({
           {hasGroupBy && onGroupByChange && (
             <Stack space={2} className="pr-auto max-w-md">
               <Label size={2} muted>
-                Group by:
+                Group by
               </Label>
               <Select
                 data-testid="group-by-select"
@@ -179,11 +179,14 @@ export function FilterBar<T extends DocumentBase>({
                 padding={3}
               >
                 <option value="">None</option>
-                {groupableColumns!.map((col) => (
-                  <option key={col} value={col}>
-                    {col}
-                  </option>
-                ))}
+                {groupableColumns!.map((columnId) => {
+                  const colDef = columns?.find((column) => (column.field ?? column.id) === columnId)
+                  return (
+                    <option key={columnId} value={columnId}>
+                      {colDef?.header ?? capitalize(columnId)}
+                    </option>
+                  )
+                })}
               </Select>
             </Stack>
           )}
