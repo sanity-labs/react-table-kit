@@ -9,36 +9,44 @@ import {column} from '../src/helpers/table/columns'
  * `width` prop to set a fixed column width in pixels.
  */
 describe('Column width prop', () => {
-  // ── column.title ──────────────────────────────────────────────────────
+  // ── column.string ─────────────────────────────────────────────────────
 
-  it('Behavior 1: column.title accepts width', () => {
-    const col = column.title({width: 200})
+  it('Behavior 1: column.string accepts width', () => {
+    const col = column.string({field: 'title', width: 200})
 
     expect(col.width).toBe(200)
   })
 
-  it('Behavior 2: column.title without width has no width property', () => {
-    const col = column.title()
+  it('Behavior 2: column.string without width has no width property', () => {
+    const col = column.string({field: 'title'})
 
     expect(col.width).toBeUndefined()
   })
 
-  it('Behavior 3: column.title with field override accepts width', () => {
-    const col = column.title({field: 'name', width: 180})
+  it('Behavior 3: column.string with field override accepts width and derives a header', () => {
+    const col = column.string({field: 'profile.displayName', width: 180})
 
-    expect(col.field).toBe('name')
+    expect(col.field).toBe('profile.displayName')
+    expect(col.header).toBe('Display Name')
     expect(col.width).toBe(180)
+  })
+
+  it('Behavior 4: deprecated column.title() still accepts width', () => {
+    const col = column.title({width: 160})
+
+    expect(col.field).toBe('title')
+    expect(col.width).toBe(160)
   })
 
   // ── column.type ───────────────────────────────────────────────────────
 
-  it('Behavior 4: column.type accepts width', () => {
+  it('Behavior 5: column.type accepts width', () => {
     const col = column.type({width: 120})
 
     expect(col.width).toBe(120)
   })
 
-  it('Behavior 5: column.type without config has no width', () => {
+  it('Behavior 6: column.type without config has no width', () => {
     const col = column.type()
 
     expect(col.width).toBeUndefined()
@@ -46,7 +54,7 @@ describe('Column width prop', () => {
 
   // ── column.updatedAt ──────────────────────────────────────────────────
 
-  it('Behavior 6: column.updatedAt accepts width', () => {
+  it('Behavior 7: column.updatedAt accepts width', () => {
     const col = column.updatedAt({width: 150})
 
     expect(col.width).toBe(150)
@@ -54,7 +62,7 @@ describe('Column width prop', () => {
 
   // ── column.badge ──────────────────────────────────────────────────────
 
-  it('Behavior 7: column.badge accepts width via config', () => {
+  it('Behavior 8: column.badge accepts width via config', () => {
     const col = column.badge({field: 'status', colorMap: {draft: 'caution'}, width: 100})
 
     expect(col.width).toBe(100)
@@ -62,7 +70,7 @@ describe('Column width prop', () => {
 
   // ── column.date ───────────────────────────────────────────────────────
 
-  it('Behavior 8: column.date accepts width', () => {
+  it('Behavior 9: column.date accepts width', () => {
     const col = column.date({field: 'dueDate', width: 130})
 
     expect(col.width).toBe(130)
@@ -70,7 +78,7 @@ describe('Column width prop', () => {
 
   // ── column.custom ─────────────────────────────────────────────────────
 
-  it('Behavior 9: column.custom accepts width', () => {
+  it('Behavior 10: column.custom accepts width', () => {
     const col = column.custom({field: 'notes', header: 'Notes', width: 250})
 
     expect(col.width).toBe(250)
@@ -78,13 +86,13 @@ describe('Column width prop', () => {
 
   // ── column.select ─────────────────────────────────────────────────────
 
-  it('Behavior 10: column.select defaults to 44px width', () => {
+  it('Behavior 11: column.select defaults to 44px width', () => {
     const col = column.select()
 
     expect(col.width).toBe(44)
   })
 
-  it('Behavior 11: column.select accepts width override', () => {
+  it('Behavior 12: column.select accepts width override', () => {
     const col = column.select({width: 32})
 
     expect(col.width).toBe(32)
@@ -92,7 +100,7 @@ describe('Column width prop', () => {
 
   // ── column.openInStudio ───────────────────────────────────────────────
 
-  it('Behavior 12: column.openInStudio accepts width override', () => {
+  it('Behavior 13: column.openInStudio accepts width override', () => {
     const col = column.openInStudio({width: 36})
 
     expect(col.width).toBe(36)
