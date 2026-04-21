@@ -1,5 +1,11 @@
 # @sanity-labs/react-table-kit
 
+## 1.3.0
+
+### Minor Changes
+
+- e207839: Add controlled `serverGroup` support for server-backed grouping flows, including `groupValue` and `groupField` support on custom columns so grouped tables can use friendly labels while still grouping by backend fields or GROQ expressions.
+
 ## 1.2.0
 
 ### Minor Changes
