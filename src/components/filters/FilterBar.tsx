@@ -120,96 +120,96 @@ export function FilterBar<T extends DocumentBase>({
         <Flex gap={4} wrap="wrap" align="center">
           {leading}
 
-        {/* Filter dropdowns */}
-        {hasFilters && (
-          <Stack space={2} className="max-w-sm">
-            <Label size={2} muted>
-              Filter By
-            </Label>
-            <Flex gap={2} wrap="wrap" align="center">
-              {filterableColumns.map((columnId) => {
-                const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
-                const isRange = colDef?.filterMode === 'range'
-                const label = colDef?.header ?? capitalize(columnId)
+          {/* Filter dropdowns */}
+          {hasFilters && (
+            <Stack space={2} className="max-w-sm">
+              <Label size={2} muted>
+                Filter By
+              </Label>
+              <Flex gap={2} wrap="wrap" align="center">
+                {filterableColumns.map((columnId) => {
+                  const colDef = columns?.find((c) => (c.field ?? c.id) === columnId)
+                  const isRange = colDef?.filterMode === 'range'
+                  const label = colDef?.header ?? capitalize(columnId)
 
-                if (isRange) {
+                  if (isRange) {
+                    return (
+                      <DateRangeFilter
+                        key={columnId}
+                        columnId={columnId}
+                        label={label}
+                        value={activeFilters[columnId]}
+                        onFilterChange={setFilter}
+                      />
+                    )
+                  }
+
+                  const options = getFilterOptions(columnId, data)
+                  const currentValue = activeFilters[columnId]
+
                   return (
-                    <DateRangeFilter
+                    <FilterDropdown
                       key={columnId}
                       columnId={columnId}
                       label={label}
-                      value={activeFilters[columnId]}
-                      onFilterChange={setFilter}
+                      options={options}
+                      value={currentValue}
+                      onSelect={(value) => setFilter(columnId, value)}
                     />
                   )
-                }
-
-                const options = getFilterOptions(columnId, data)
-                const currentValue = activeFilters[columnId]
-
-                return (
-                  <FilterDropdown
-                    key={columnId}
-                    columnId={columnId}
-                    label={label}
-                    options={options}
-                    value={currentValue}
-                    onSelect={(value) => setFilter(columnId, value)}
-                  />
-                )
-              })}
-            </Flex>
-          </Stack>
-        )}
-
-        {/* Group by */}
-        {hasGroupBy && onGroupByChange && (
-          <Stack space={2} className="pr-auto max-w-md">
-            <Label size={2} muted>
-              Group by:
-            </Label>
-            <Select
-              data-testid="group-by-select"
-              value={groupBy ?? ''}
-              onChange={(e) => {
-                const value = e.currentTarget.value
-                onGroupByChange(value || null)
-              }}
-              fontSize={1}
-              padding={3}
-            >
-              <option value="">None</option>
-              {groupableColumns!.map((col) => (
-                <option key={col} value={col}>
-                  {col}
-                </option>
-              ))}
-            </Select>
-          </Stack>
-        )}
-
-        {/* Search input */}
-        {filters.searchQuery !== undefined && (
-          <>
-            {searchLeading}
-            <Stack space={2} className="max-w-sm">
-              <Label size={2} muted>
-                Search
-              </Label>
-              <DefaultToneScope>
-                <TextInput
-                  icon={SearchIcon}
-                  placeholder="Search..."
-                  value={searchInputValue}
-                  onChange={(e) => setSearchInput(e.currentTarget.value)}
-                  fontSize={1}
-                  padding={3}
-                  style={{minWidth: 200, flex: '1 1 200px'}}
-                />
-              </DefaultToneScope>
+                })}
+              </Flex>
             </Stack>
-          </>
-        )}
+          )}
+
+          {/* Group by */}
+          {hasGroupBy && onGroupByChange && (
+            <Stack space={2} className="pr-auto max-w-md">
+              <Label size={2} muted>
+                Group by:
+              </Label>
+              <Select
+                data-testid="group-by-select"
+                value={groupBy ?? ''}
+                onChange={(e) => {
+                  const value = e.currentTarget.value
+                  onGroupByChange(value || null)
+                }}
+                fontSize={1}
+                padding={3}
+              >
+                <option value="">None</option>
+                {groupableColumns!.map((col) => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </Select>
+            </Stack>
+          )}
+
+          {/* Search input */}
+          {filters.searchQuery !== undefined && (
+            <>
+              {searchLeading}
+              <Stack space={2} className="max-w-sm">
+                <Label size={2} muted>
+                  Search
+                </Label>
+                <DefaultToneScope>
+                  <TextInput
+                    icon={SearchIcon}
+                    placeholder="Search..."
+                    value={searchInputValue}
+                    onChange={(e) => setSearchInput(e.currentTarget.value)}
+                    fontSize={1}
+                    padding={3}
+                    style={{minWidth: 200, flex: '1 1 200px'}}
+                  />
+                </DefaultToneScope>
+              </Stack>
+            </>
+          )}
           {filters.searchQuery === undefined && searchLeading}
         </Flex>
 

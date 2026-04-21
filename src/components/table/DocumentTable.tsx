@@ -109,7 +109,13 @@ export function DocumentTable<T extends DocumentBase>({
   // Loading skeleton — only on initial load (no data ever received)
   if (isInitialLoad) {
     return (
-      <Card padding={4} data-testid="sanity-table-skeleton" radius={2} border style={dockedCardStyle}>
+      <Card
+        padding={4}
+        data-testid="sanity-table-skeleton"
+        radius={2}
+        border
+        style={dockedCardStyle}
+      >
         <Stack space={3}>
           {Array.from({length: 5}).map((_, i) => (
             <Flex key={i} gap={3} align="center">
